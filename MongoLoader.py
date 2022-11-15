@@ -19,11 +19,13 @@ class Mongo(object):
 
     @property
     def list_database(self):
+        # List all databases' names under the given client.
         return self.client.list_database_names()
 
 
     @property
     def list_schema(self):
+        # List all schemas' names inside the given database.
         return self.db.collection_names()
 
 
