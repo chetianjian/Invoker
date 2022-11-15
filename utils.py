@@ -288,7 +288,7 @@ def tFilteredReturn(code: str, signal: pd.Series, rdf: pd.DataFrame) -> float:
     :param code: Code of a specific stock, format as "000001"
     :param signal: pd.Series that records the trading decision for each day.
             -1 denotes "short", 1 denotes "long", and 0 denotes "hold current position".
-    :param rdf: pd.DataFrame, basically ought to be Invoker.data["rate"].
+    :param rdf: pd.DataFrame, basically ought to be Invoker.rate or Invoker.data["rate"].
     :return: A float which stands for the cumulative simple rate of return.
     """
 
