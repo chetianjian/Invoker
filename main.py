@@ -3,7 +3,7 @@ from utils import *
 
 
 invoker = Invoker()
-invoker.load_stock_daily()
+invoker.load_stock_day()
 invoker.truncate()
 print(invoker.rate)
 

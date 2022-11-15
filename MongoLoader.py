@@ -31,73 +31,62 @@ class Mongo(object):
 
     @property
     def open(self):
-        assert self.data["open"] is not None
         return self.data["open"]
 
 
     @property
     def close(self):
-        assert self.data["close"] is not None
         return self.data["close"]
 
 
     @property
     def high(self):
-        assert self.data["high"] is not None
         return self.data["high"]
 
 
     @property
     def low(self):
-        assert self.data["low"] is not None
         return self.data["low"]
 
 
     @property
     def vwap(self):
-        assert self.data["vwap"] is not None
         return self.data["vwap"]
 
 
     @property
     def rate(self):
-        assert self.data["rate"] is not None
         return self.data["rate"]
 
 
     @property
     def volume(self):
-        assert self.data["volume"] is not None
         return self.data["volume"]
 
 
     @property
     def turnover(self):
-        assert self.data["turnover"] is not None
+
         return self.data["turnover"]
 
 
     @property
     def money(self):
-        assert self.data["money"] is not None
         return self.data["money"]
 
 
     @property
     def adj(self):
-        assert self.data["adj"] is not None
         return self.data["adj"]
 
 
     @property
     def mv(self):
-        assert self.data["mv"] is not None
         return self.data["mv"]
 
 
     @property
     def xdxr(self):
-        assert self.data["xdxr"] is not None
         return self.data["xdxr"]
 
 
@@ -155,7 +144,7 @@ class Mongo(object):
                 continue
 
 
-    def load_stock_daily(self):
+    def load_stock_day(self):
         """
         :return: Load daily stock data into self.data dictionary.
         """
@@ -179,7 +168,7 @@ class Mongo(object):
         print("Daily rate loaded successfully.")
 
 
-    def load_index_daily(self):
+    def load_index_day(self):
         """
         :return: Load daily index data into self.data dictionary.
         """
@@ -202,7 +191,7 @@ class Mongo(object):
         print("Daily index return data loaded successfully.")
 
 
-    def load_open_daily(self):
+    def load_open_day(self):
         """
         :return: Load daily open prices into self.data dictionary.
         """
@@ -213,7 +202,7 @@ class Mongo(object):
         print("Daily open prices loaded successfully.")
 
 
-    def load_close_daily(self):
+    def load_close_day(self):
         """
         :return: Load daily close prices into self.data dictionary.
         """
@@ -224,7 +213,7 @@ class Mongo(object):
         print("Daily close prices loaded successfully.")
 
 
-    def load_low_daily(self):
+    def load_low_day(self):
         """
         :return: Load daily low prices into self.data dictionary.
         """
@@ -235,7 +224,7 @@ class Mongo(object):
         print("Daily low prices loaded successfully.")
 
 
-    def load_high_daily(self):
+    def load_high_day(self):
         """
         :return: Load daily high prices into self.data dictionary.
         """
@@ -246,7 +235,7 @@ class Mongo(object):
         print("Daily high prices loaded successfully.")
 
 
-    def load_volume_daily(self):
+    def load_volume_day(self):
         """
         :return: Load daily volume into self.data dictionary.
         """
@@ -257,7 +246,7 @@ class Mongo(object):
         print("Daily volume size loaded successfully.")
 
 
-    def load_money_daily(self):
+    def load_money_day(self):
         """
         :return: Load daily trade amount into self.data dictionary.
         """
@@ -268,19 +257,19 @@ class Mongo(object):
         print("Daily money amount loaded successfully.")
 
 
-    def load_rate_daily(self):
+    def load_rate_day(self):
         """
         :return: Load daily stock returns into self.data dictionary.
         """
 
-        self.load_close_daily()
+        self.load_close_day()
         self.data["rate"] = self.data["close"].diff(1) / self.data["close"].shift(1)
         self.release_memory(dname="close")
 
         print("Daily stock returns loaded successfully.")
 
 
-    def load_adj_daily(self):
+    def load_adj_day(self):
         """
         :return: Load daily stock adj prices into self.data dictionary (Large Dataset!).
         """
