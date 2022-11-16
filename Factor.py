@@ -931,7 +931,7 @@ class Factor(Mongo):
         :param window: int, default = 1.
         :param closed: str in ["left", "right", "both", "neither"], default = None.
         :return: The Average True Range. Calculated by
-            "window-days-average of: max(hig-low, abs(high-previous_close), abs(low-previous_close))"
+            "window-days-average of: max(high-low, abs(high-previous_close), abs(low-previous_close))"
         """
 
         if usedPrice == "close":

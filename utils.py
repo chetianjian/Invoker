@@ -158,6 +158,33 @@ def draw_lines(series_list, color_list, legend_list, jupyter=True, description=N
     return plotly.offline.iplot(fig, filename="dataplot")
 
 
+def draw_df_lines(df: pd.DataFrame, color_list, jupyter=True, title=""):
+
+    assert df.shape[1] == len(color_list)
+
+    traces = []
+
+    dfcol = df.columns
+    for _ in range(df.shape[1]):
+        trace = plotly.graph_objs.Scattergl(
+            name=dfcol[_],
+            x=df.index,
+            y=df[dfcol[_]].values,
+            line=dict(color=color_list[_])
+        )
+
+        traces.append(trace)
+
+    layout = plotly.graph_objs.Layout(
+        title="Plot series data of: " + title
+    )
+
+    fig = plotly.graph_objs.Figure(data=traces, layout=layout)
+    if jupyter:
+        plotly.offline.init_notebook_mode(connected=True)
+    return plotly.offline.iplot(fig, filename="dataplot")
+
+
 def impluse(arr):
     result, i = 0, 0
     while i < len(arr):
