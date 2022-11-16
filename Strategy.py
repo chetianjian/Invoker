@@ -1,6 +1,6 @@
 from MongoLoader import Mongo
+from TradingStrategy151 import TradingStrategy151
 
-
-class Strategy(Mongo):
+class Strategy(TradingStrategy151):
     def __init__(self):
         super().__init__()

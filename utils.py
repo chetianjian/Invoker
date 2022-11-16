@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import plotly
 import plotly.express as px
+import plotly.graph_objects as go
 from sklearn.linear_model import LinearRegression
 
 
@@ -93,96 +94,6 @@ def EMA(df: pd.DataFrame, window, fillna=False) -> pd.DataFrame:
     """
 
     return df.ewm(alpha=2/(window+1)).mean() if not fillna else df.ewm(alpha=2/(window+1)).mean().fillna(fillna)
-
-
-def draw_line(series, legend=None, jupyter=True, color="blue", description=None):
-    if type(series) == pd.DataFrame:
-        series = series.iloc[:, 0]
-
-    traces = []
-    trace = plotly.graph_objs.Scattergl(
-        name=legend,
-        x=series.index,
-        y=series.values,
-        line=dict(color=color)
-    )
-
-    traces.append(trace)
-
-    if description:
-        layout = plotly.graph_objs.Layout(
-            title=description
-        )
-    else:
-        layout = plotly.graph_objs.Layout(
-            title="Plot series data of: " + series.name
-        )
-
-    fig = plotly.graph_objs.Figure(data=traces, layout=layout)
-    if jupyter:
-        plotly.offline.init_notebook_mode(connected=True)
-    return plotly.offline.iplot(fig, filename="dataplot")
-
-
-def draw_lines(series_list, color_list, legend_list, jupyter=True, description=None):
-
-    assert len(series_list) == len(color_list) == len(legend_list)
-
-    traces = []
-
-    for _ in range(len(series_list)):
-        if type(series_list[_]) == pd.DataFrame:
-            series_list[_] = series_list[_].iloc[:, 0]
-
-        trace = plotly.graph_objs.Scattergl(
-            name=legend_list[_],
-            x=series_list[_].index,
-            y=series_list[_].values,
-            line=dict(color=color_list[_])
-        )
-
-        traces.append(trace)
-
-    if description:
-        layout = plotly.graph_objs.Layout(
-            title=description
-        )
-    else:
-        layout = plotly.graph_objs.Layout(
-            title="Plot series data of: " + series_list[0].name
-        )
-
-    fig = plotly.graph_objs.Figure(data=traces, layout=layout)
-    if jupyter:
-        plotly.offline.init_notebook_mode(connected=True)
-    return plotly.offline.iplot(fig, filename="dataplot")
-
-
-def draw_df_lines(df: pd.DataFrame, color_list, jupyter=True, title=""):
-
-    assert df.shape[1] == len(color_list)
-
-    traces = []
-
-    dfcol = df.columns
-    for _ in range(df.shape[1]):
-        trace = plotly.graph_objs.Scattergl(
-            name=dfcol[_],
-            x=df.index,
-            y=df[dfcol[_]].values,
-            line=dict(color=color_list[_])
-        )
-
-        traces.append(trace)
-
-    layout = plotly.graph_objs.Layout(
-        title="Plot series data of: " + title
-    )
-
-    fig = plotly.graph_objs.Figure(data=traces, layout=layout)
-    if jupyter:
-        plotly.offline.init_notebook_mode(connected=True)
-    return plotly.offline.iplot(fig, filename="dataplot")
 
 
 def impluse(arr):
@@ -298,6 +209,7 @@ def tFilter(signal: pd.Series) -> pd.Series:
                 a position currently, and temporarily ignore the weight of position
                 that we hold.
     """
+
     if signal is None:
         return np.nan
     direction, flst = signal[0], [True]
@@ -324,3 +236,110 @@ def tFilteredReturn(code: str, signal: pd.Series, rdf: pd.DataFrame) -> float:
         start, end = idx[_], idx[_+1]
         cr += signal[_] * (rate.loc[start: end].sum() - rate[idx[_]] + rate[idx[_+1]])
     return cr
+
+
+
+########################################################################################################################
+########################################################################################################################
+########################################################################################################################
+
+
+
+def draw_line(series, legend=None, jupyter=True, color="blue", description=None):
+    if type(series) == pd.DataFrame:
+        series = series.iloc[:, 0]
+
+    traces = []
+    trace = plotly.graph_objs.Scattergl(
+        name=legend,
+        x=series.index,
+        y=series.values,
+        line=dict(color=color)
+    )
+
+    traces.append(trace)
+
+    if description:
+        layout = plotly.graph_objs.Layout(
+            title=description
+        )
+    else:
+        layout = plotly.graph_objs.Layout(
+            title="Plot series data of: " + series.name
+        )
+
+    fig = plotly.graph_objs.Figure(data=traces, layout=layout)
+    if jupyter:
+        plotly.offline.init_notebook_mode(connected=True)
+    return plotly.offline.iplot(fig, filename="dataplot")
+
+
+def draw_lines(series_list, color_list, legend_list, jupyter=True, description=None):
+
+    assert len(series_list) == len(color_list) == len(legend_list)
+
+    traces = []
+
+    for _ in range(len(series_list)):
+        if type(series_list[_]) == pd.DataFrame:
+            series_list[_] = series_list[_].iloc[:, 0]
+
+        trace = plotly.graph_objs.Scattergl(
+            name=legend_list[_],
+            x=series_list[_].index,
+            y=series_list[_].values,
+            line=dict(color=color_list[_])
+        )
+
+        traces.append(trace)
+
+    if description:
+        layout = plotly.graph_objs.Layout(
+            title=description
+        )
+    else:
+        layout = plotly.graph_objs.Layout(
+            title="Plot series data of: " + series_list[0].name
+        )
+
+    fig = plotly.graph_objs.Figure(data=traces, layout=layout)
+    if jupyter:
+        plotly.offline.init_notebook_mode(connected=True)
+    return plotly.offline.iplot(fig, filename="dataplot")
+
+
+def draw_df_lines(df: pd.DataFrame, color_list, jupyter=True, title=""):
+
+    assert df.shape[1] == len(color_list)
+
+    traces = []
+
+    dfcol = df.columns
+    for _ in range(df.shape[1]):
+        trace = plotly.graph_objs.Scattergl(
+            name=dfcol[_],
+            x=df.index,
+            y=df[dfcol[_]].values,
+            line=dict(color=color_list[_])
+        )
+
+        traces.append(trace)
+
+    layout = plotly.graph_objs.Layout(
+        title="Plot series data of: " + title
+    )
+
+    fig = plotly.graph_objs.Figure(data=traces, layout=layout)
+    if jupyter:
+        plotly.offline.init_notebook_mode(connected=True)
+    return plotly.offline.iplot(fig, filename="dataplot")
+
+
+def draw_candle(df: pd.DataFrame):
+    fig = go.Figure(data=[go.Candlestick(
+        x=df.index,
+        open=df["open"],
+        high=df["high"],
+        low=df["low"],
+        close=df["close"])])
+    fig.show()

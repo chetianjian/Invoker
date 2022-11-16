@@ -689,11 +689,10 @@ class Factor(Mongo):
         :return: 资金流量指数
         """
 
-        for dname in ["close", "high", "low", "volume", "money"]:
+        for dname in ["close", "high", "low", "volume", "money", "vwap"]:
             assert self.data[dname] is not None
 
-        canonical_price = (self.close + self.high + self.low) / 3
-        money_flow = canonical_price * self.volume
+        money_flow = self.vwap * self.volume
         money_flow = 2 * (((self.money - self.money.shift(1)) > 0)
                           - 0.5) * money_flow
         money_ratio = money_flow.rolling(window=window, closed=closed).apply(
@@ -714,10 +713,10 @@ class Factor(Mongo):
         assert self.data[market_return] is not None
 
         if market_return == "hs300":
-            abnormal_return = self.rate().apply(
+            abnormal_return = self.rate.apply(
                 lambda col: col - self.data["hs300"]["hs300_return"], axis=0)
         else:
-            abnormal_return = self.rate().apply(
+            abnormal_return = self.rate.apply(
                 lambda col: col - self.data["zz500"]["zz500_return"], axis=0)
 
         return abnormal_return.rolling(window=window, closed=closed).sum()

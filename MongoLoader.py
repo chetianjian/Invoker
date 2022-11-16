@@ -1,4 +1,5 @@
 import pymongo
+import numpy as np
 import pandas as pd
 from datetime import datetime
 
@@ -18,76 +19,97 @@ class Mongo(object):
 
 
     @property
-    def list_database(self):
+    def list_database(self) -> list:
         # List all databases' names under the given client.
         return self.client.list_database_names()
 
 
     @property
-    def list_schema(self):
+    def list_schema(self) -> list:
         # List all schemas' names inside the given database.
         return self.db.collection_names()
 
 
     @property
-    def open(self):
+    def list_trading_day(self) -> list:
+        # List the historical record of trading days in the database.
+        return self.data["close"].index
+
+
+    @property
+    def list_stock_code(self) -> list:
+        # Return the code list of all stocks in the database.
+        return self.data["close"].columns
+
+
+    @property
+    def open(self) -> pd.DataFrame:
         return self.data["open"]
 
 
     @property
-    def close(self):
+    def close(self) -> pd.DataFrame:
         return self.data["close"]
 
 
     @property
-    def high(self):
+    def high(self) -> pd.DataFrame:
         return self.data["high"]
 
 
     @property
-    def low(self):
+    def low(self) -> pd.DataFrame:
         return self.data["low"]
 
 
     @property
-    def vwap(self):
+    def vwap(self) -> pd.DataFrame:
         return self.data["vwap"]
 
 
     @property
-    def rate(self):
+    def rate(self) -> pd.DataFrame:
         return self.data["rate"]
 
 
     @property
-    def volume(self):
+    def volume(self) -> pd.DataFrame:
         return self.data["volume"]
 
 
     @property
-    def turnover(self):
+    def turnover(self) -> pd.DataFrame:
 
         return self.data["turnover"]
 
 
     @property
-    def money(self):
+    def money(self) -> pd.DataFrame:
         return self.data["money"]
 
 
     @property
-    def adj(self):
+    def adj(self) -> pd.DataFrame:
         return self.data["adj"]
 
 
     @property
-    def mv(self):
+    def mv(self) -> pd.DataFrame:
         return self.data["mv"]
 
 
     @property
-    def xdxr(self):
+    def xdxr(self) -> pd.DataFrame:
         return self.data["xdxr"]
+
+
+    @classmethod
+    def single_stock_day(cls, code: str) -> pd.DataFrame:
+        return pd.DataFrame(cls().db["stock_day"].find({"code": code})).drop(
+            columns=["_id", "date_stamp"]
+        ).rename(
+            columns={"amount": "money", "vol": "volume"}
+        ).set_index("date")
 
 
     def release_memory(self, dname=None, clear_all=False):
@@ -142,6 +164,24 @@ class Mongo(object):
 
             else:
                 continue
+
+
+    def slim(self, maxNanProp=0.1):
+        """
+        Remove all the columns of stock data which have more NaNs than we expected.
+        :param maxNanProp: The maximum proportion of NaN values we can endure.
+        """
+
+        threshold = len(self.list_trading_day) * maxNanProp
+
+        for dname in self.available_dname:
+            count = 0
+            if self.data[dname].columns == self.list_stock_code:
+                for col in self.list_stock_code[::-1]:
+                    if np.nansum(np.isnan(self.data[dname][col])) > threshold:
+                        count += 1
+                        del self.data[dname][col]
+                print(f"Succesfully removed {count} columns from stock {dname} data.")
 
 
     def load_stock_day(self):
@@ -337,3 +377,5 @@ class Mongo(object):
                      "category_meaning": "category"}).set_index(["date", "code"])
 
         print("Stock XDXR data loaded successfully.")
+
+
