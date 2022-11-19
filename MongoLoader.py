@@ -172,11 +172,14 @@ class Mongo(object):
         :param maxNanProp: The maximum proportion of NaN values we can endure.
         """
 
+        pass
         threshold = len(self.list_trading_day) * maxNanProp
 
         for dname in self.available_dname:
             count = 0
-            if self.data[dname].columns == self.list_stock_code:
+            if self.data[dname] is None:
+                continue
+            elif self.data[dname].shape == (len(self.list_trading_day), len(self.list_stock_code)):
                 for col in self.list_stock_code[::-1]:
                     if np.nansum(np.isnan(self.data[dname][col])) > threshold:
                         count += 1
@@ -240,6 +243,7 @@ class Mongo(object):
             ["date", "code"])["open"].unstack()
 
         print("Daily open prices loaded successfully.")
+        return self.data["open"]
 
 
     def load_close_day(self):
@@ -251,6 +255,7 @@ class Mongo(object):
             ["date", "code"])["close"].unstack()
 
         print("Daily close prices loaded successfully.")
+        return self.data["close"]
 
 
     def load_low_day(self):
@@ -262,6 +267,7 @@ class Mongo(object):
             ["date", "code"])["low"].unstack()
 
         print("Daily low prices loaded successfully.")
+        return self.data["low"]
 
 
     def load_high_day(self):
@@ -273,6 +279,7 @@ class Mongo(object):
             ["date", "code"])["high"].unstack()
 
         print("Daily high prices loaded successfully.")
+        return self.data["high"]
 
 
     def load_volume_day(self):
@@ -284,6 +291,7 @@ class Mongo(object):
             ["date", "code"])["vol"].unstack()
 
         print("Daily volume size loaded successfully.")
+        return self.data["volume"]
 
 
     def load_money_day(self):
@@ -291,10 +299,11 @@ class Mongo(object):
         :return: Load daily trade amount into self.data dictionary.
         """
 
-        self.data["moeny"] = pd.DataFrame(self.db["stock_day"].find()).set_index(
+        self.data["money"] = pd.DataFrame(self.db["stock_day"].find()).set_index(
             ["date", "code"])["amount"].unstack()
 
         print("Daily money amount loaded successfully.")
+        return self.data["money"]
 
 
     def load_rate_day(self):
@@ -307,6 +316,7 @@ class Mongo(object):
         self.release_memory(dname="close")
 
         print("Daily stock returns loaded successfully.")
+        return self.data["rate"]
 
 
     def load_adj_day(self):
@@ -318,6 +328,7 @@ class Mongo(object):
             columns=["_id"]).set_index(["date", "code"])["adj"].unstack()
 
         print("Daily stock adj prices loaded successfully.")
+        return self.data["adj"]
 
 
     def load_stock_list(self):
@@ -341,6 +352,7 @@ class Mongo(object):
             columns=["_id", "volunit", "decimal_point", "sec"]).set_index("code")
 
         print("ETF list data loaded successfully.")
+        return self.data["etf_list"]
 
 
     def load_index_list(self):
@@ -352,6 +364,7 @@ class Mongo(object):
             columns=["_id", "volunit", "decimal_point", "sec"]).set_index("code")
 
         print("Index list data loaded successfully.")
+        return self.data["index_list"]
 
 
     def load_stock_block(self):
@@ -363,6 +376,7 @@ class Mongo(object):
             columns=["_id", "source"]).set_index("code")
 
         print("Stock block data loaded successfully.")
+        return self.data["stock_block"]
 
 
     def load_xdxr(self):
@@ -377,5 +391,6 @@ class Mongo(object):
                      "category_meaning": "category"}).set_index(["date", "code"])
 
         print("Stock XDXR data loaded successfully.")
+        return self.data["xdxr"]
 
 
