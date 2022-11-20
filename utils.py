@@ -343,3 +343,6 @@ def draw_candle(df: pd.DataFrame):
         low=df["low"],
         close=df["close"])])
     fig.show()
+
+
+
