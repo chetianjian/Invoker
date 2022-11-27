@@ -41,6 +41,18 @@ class TradingStrategy151(Mongo):
         return backtest_yield
 
 
+    def Strategy_4_Low_Volatility_anomaly(self, H, T=22):
+        """
+        :param H: Holding Period.
+        :param T: Formation Perid, default to 22.
+        :return:
+        """
+
+
+    def Strategy_9_Mean_Reversion_Single_Cluster(self, n):
+
+
+
 
 
 

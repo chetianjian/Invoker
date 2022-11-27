@@ -344,5 +344,3 @@ def draw_candle(df: pd.DataFrame):
         close=df["close"])])
     fig.show()
 
-
-
