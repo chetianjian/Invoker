@@ -225,6 +225,8 @@ class Mongo(object):
             self.data["index_" + table_name] = df[table_name].unstack()
             print(f"Daily index {table_name} data loaded successfully.")
 
+        self.data["index_rate"] = self.data["close"].diff(1) / self.data["close"].shift(1)
+
         del df
 
         self.data["index_vwap"] = ((self.data["high"] + self.data["low"] + self.data["close"]) / 3)

@@ -335,7 +335,14 @@ def draw_df_lines(df: pd.DataFrame, color_list, jupyter=True, title=""):
     return plotly.offline.iplot(fig, filename="dataplot")
 
 
-def draw_candle(df: pd.DataFrame):
+def draw_candle(df: pd.DataFrame, n=0):
+    """
+    :param df: pd.DataFrame which stores the required data.
+    :param n: Default to 0, which means all data are required to be included.
+              Draw the candle plot for the last-n-days.
+    :return: None.
+    """
+    df = df.iloc[-n:, :]
     fig = go.Figure(data=[go.Candlestick(
         x=df.index,
         open=df["open"],

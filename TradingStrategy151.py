@@ -50,7 +50,7 @@ class TradingStrategy151(Mongo):
 
 
     def Strategy_9_Mean_Reversion_Single_Cluster(self, n):
-
+        pass
 
 
 
