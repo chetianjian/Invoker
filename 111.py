@@ -71,8 +71,6 @@ def long_impluse_5_max_linear_version(return_adj, window=5):
 
 
 def short_impluse_5_min_version(return_adj, window=5):
-    import numpy as np
-
     def impluse(arr):
         if sum(np.isnan(arr)) == len(arr):
             return np.nan

@@ -1,3 +1,5 @@
+from typing import List
+
 from Factor import Factor
 from Strategy import Strategy
 from utils import *
@@ -34,7 +36,7 @@ class Invoker(Factor, Strategy):
 
 
     @classmethod
-    def code2block(cls, code: str) -> list[str]:
+    def code2block(cls, code: str) -> List[str]:
         """
         :param code: A single stock code.
         :return: The block names which the stock belongs to.

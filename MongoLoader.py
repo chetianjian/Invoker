@@ -12,8 +12,8 @@ class Mongo(object):
         self.available_dname = ["open", "close", "high", "low", "volume", "money",
                                 "rate", "vwap", "mv", "turnover", "adj", "xdxr",
                                 "stock_day", "index_day", "hs300", "zz500", "reports",
-                                "stock_block", "stock_list", "etf_list", "index_list",
-                                "close_min"]
+                                "stock_block", "stock_list", "stock_basic", "stock_info",
+                                "etf_list", "index_list", "close_min"]
 
         self.data = dict.fromkeys(self.available_dname)
 
@@ -101,6 +101,15 @@ class Mongo(object):
     @property
     def xdxr(self) -> pd.DataFrame:
         return self.data["xdxr"]
+
+    @property
+    def basic(self) -> pd.DataFrame:
+        return self.data["stock_basic"]
+
+
+    @property
+    def info(self) -> pd.DataFrame:
+        return self.data["stock_info"]
 
 
     @classmethod
@@ -396,6 +405,40 @@ class Mongo(object):
         return self.data["xdxr"]
 
 
+    def load_stock_basic(self):
+        """
+        :return: Load stock basic data, including information of listed date, name,
+                    area and industry.
+        """
 
+        df = pd.DataFrame(self.db["stock_basic"].find()).drop(columns=["_id"]).rename(
+            columns={"list_date_stamp": "time_stamp"}).set_index("code")
 
+        df["list_date"] = list(map(lambda x: x[0:4] + "-" + x[4:6] + "-" + x[6:], df["list_date"]))
+        self.data["stock_basic"] = df
+        print("Stock basic data loaded successfully.")
+        return df
+
+    def load_stock_info(self):
+
+        df = pd.DataFrame(self.db["stock_info"].find()).drop(columns=["_id"])
+
+        df = df.rename(columns={
+            "liutongguben": "流通股", "zongguben": "总股本", "guojiagu": "国家股",
+            "faqirenfarengu": "发起人法人股", "farengu": "法人股", "bgu": "B股",
+            "hgu": "H股", "zhigonggu": "职工股", "zongzichan": "总资产",  "liudongzichan": "流动资产",
+            "gudingzichan": "固定资产", "wuxingzichan": "无形资产", "gudongrenshu": "股东人数",
+            "liudongfuzhai": "流动负债", "changqifuzhai": "长期负债", "zibengongjijin": "资本公积金",
+            "jingzichan": "净资产", "zhuyingshouru": "主营收入", "zhuyinglirun": "主营利润",
+            "yingshouzhangkuan": "应收账款", "yingyelirun": "营业利润", "touzishouyu": "投资收入",
+            "jingyingxianjinliu": "经营现金流", "zongxianjinliu": "总现金流", "cunhuo": "存货",
+            "lirunzonghe": "利润总和", "shuihoulirun": "税后利润", "jinglirun": "净利润",
+            "weifenpeilirun": "未分配利润", "meigujingzichan": "每股净资产"
+        })
+
+        df["market"] = df["market"].apply(lambda x: "深圳" if x == 0 else "上海")
+
+        self.data["stock_info"] = df
+        print("Stock information loaded successfully.")
+        return df
 

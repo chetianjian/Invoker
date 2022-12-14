@@ -1,4 +1,3 @@
-from MongoLoader import Mongo
 from TradingStrategy151 import TradingStrategy151
 
 class Strategy(TradingStrategy151):

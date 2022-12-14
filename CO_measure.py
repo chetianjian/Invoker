@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 monthly_sequence = return_original.columns.values.tolist()
 
-##CO measure
+#CO measure
 stock_code_list1 = return_original.index.tolist()
 stock_code_list2 = volume_original.index.tolist()
 stock_code_list = [i for i in stock_code_list1 if i in stock_code_list2]
