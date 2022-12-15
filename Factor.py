@@ -62,7 +62,7 @@ class Factor(Mongo):
             return factor[code].shift(1).corr(self.rate[code], min_periods=10)
 
 
-    def TVMA(self, window=6, closed=None):
+    def tvma(self, window=6, closed=None):
         """
         :param window: int, default = 6.
         :param closed: str in ["left", "right", "both", "neither"], default = None.
@@ -74,7 +74,7 @@ class Factor(Mongo):
         return self.money.rolling(window, closed=closed).mean()
 
 
-    def BIAS(self, window=5, closed=None):
+    def bias(self, window=5, closed=None):
         """
         window 日乖离率
         :param window: int, default = 5.
@@ -88,7 +88,7 @@ class Factor(Mongo):
                self.close.rolling(window, closed=closed).mean()
 
 
-    def VOL(self, window=10, closed=None):
+    def vol(self, window=10, closed=None):
         """
         :param window: int, default = 10.
         :param closed: str in ["left", "right", "both", "neither"], default = None.
@@ -100,7 +100,7 @@ class Factor(Mongo):
         return self.turnover.rolling(window, closed=closed).mean()
 
 
-    def CCI(self, window=10, closed=None):
+    def cci(self, window=10, closed=None):
         """
         :param window: int, default = 10.
         :param closed: str in ["left", "right", "both", "neither"], default = None.
@@ -117,7 +117,7 @@ class Factor(Mongo):
                (0.015 * typ.rolling(window).apply(lambda x: arrAvgAbs(x)))
 
 
-    def CCI_vwap(self, window=10, closed=None):
+    def cci_vwap(self, window=10, closed=None):
         """
         :param window: int, default = 10.
         :param closed: str in ["left", "right", "both", "neither"], default = None.
@@ -131,7 +131,7 @@ class Factor(Mongo):
                (0.015 * self.vwap.rolling(window, closed=closed).apply(lambda x: arrAvgAbs(x)))
 
 
-    def BollUp(self, window=20, closed=None):
+    def bollup(self, window=20, closed=None):
         """
         :param window: int, default = 20.
         :param closed: str in ["left", "right", "both", "neither"], default = None.
@@ -145,7 +145,7 @@ class Factor(Mongo):
                 2 * self.close.rolling(window, closed=closed).std()) / self.close
 
 
-    def Price_ema(self, which_price="close", window=10, fillna=False):
+    def price_ema(self, which_price="close", window=10, fillna=False):
         """
         价格的指数移动平均线
         :param window: int, default = 20.
@@ -172,7 +172,7 @@ class Factor(Mongo):
             return EMA(self.vwap, window=window, fillna=fillna)
 
 
-    def ReferencePrice(self, window=6, closed="left"):
+    def reference_price(self, window=6, closed="left"):
 
         assert self.turnover is not None
         assert self.vwap is not None
@@ -187,7 +187,7 @@ class Factor(Mongo):
         return result
 
 
-    def AR(self, window=7, closed=None):
+    def ar(self, window=7, closed=None):
         """
         每天上涨的动力
         :param window: int, default = 7.
@@ -203,7 +203,7 @@ class Factor(Mongo):
         return result[~np.isinf(result)]
 
 
-    def BR(self, window=7, closed=None):
+    def br(self, window=7, closed=None):
         """
         锚定昨日的收盘
         :param window: int, default = 7.
@@ -221,7 +221,7 @@ class Factor(Mongo):
         return result[~np.isinf(result)]
 
 
-    def CR(self, window=7, closed=None):
+    def cr(self, window=7, closed=None):
         """
         复苏的动力
         :param window: int, default = 7.
@@ -237,26 +237,26 @@ class Factor(Mongo):
         return result[~np.isinf(result)]
 
 
-    def ARBR(self, window=7, closed=None):
+    def arbr(self, window=7, closed=None):
         """
         :param window: int, default = 7.
         :param closed: str in ["left", "right", "both", "neither"], default = None.
         :return: 因子 AR 与因子 BR 的差。
         """
-        return self.AR(window=window, closed=closed) - self.BR(window=window, closed=closed)
+        return self.ar(window=window, closed=closed) - self.br(window=window, closed=closed)
 
 
-    def ARCR(self, window=7, closed=None):
+    def arcr(self, window=7, closed=None):
         """
         AR、CR结构不仅对称、相反，而且互补。
         :param window: int, default = 7.
         :param closed: str in ["left", "right", "both", "neither"], default = None.
         :return: 因子 AR 与因子 CR 的和。
         """
-        return self.AR(window=window, closed=closed) - self.CR(window=window, closed=closed)
+        return self.ar(window=window, closed=closed) - self.cr(window=window, closed=closed)
 
 
-    def VDIFF(self, short=12, long=26):
+    def vdiff(self, short=12, long=26):
         """
         DIFF线
         :param short: int, default = 12.
@@ -275,7 +275,7 @@ class Factor(Mongo):
                self.volume.ewm(alpha=2 / (long + 1)).mean()
 
 
-    def VDEA(self, short=12, long=26, window=9, closed=None):
+    def vdea(self, short=12, long=26, window=9, closed=None):
         """
         DEA线
         :param short: int, default = 12.
@@ -290,10 +290,10 @@ class Factor(Mongo):
                  return DEA
         """
 
-        return self.VDIFF(short=short, long=long).rolling(window, closed=closed).mean()
+        return self.vdiff(short=short, long=long).rolling(window, closed=closed).mean()
 
 
-    def VMACD(self, short=12, long=26, window=9, closed=None):
+    def vmacd(self, short=12, long=26, window=9, closed=None):
         """
         MACD 线
         :param short: int, default = 12.
@@ -308,11 +308,11 @@ class Factor(Mongo):
                  return VMACD
         """
 
-        return self.VDIFF(short=short, long=long) - \
-               self.VDEA(short=short, long=long, window=window, closed=closed)
+        return self.vdiff(short=short, long=long) - \
+               self.vdea(short=short, long=long, window=window, closed=closed)
 
 
-    def VROC(self, window=6):
+    def vroc(self, window=6):
         """
         window日成交量变化的速率 VROC
         :param window: int, default = 6.
@@ -325,7 +325,7 @@ class Factor(Mongo):
         return result[~np.isinf(result)]
 
 
-    def weighted_PV_trend_weekly(self, window=7, closed=None):
+    def weighted_pv_trend_weekly(self, window=7, closed=None):
         """
         :param window: int, default = 7.
         :param closed: str in ["left", "right", "both", "neither"], default = None.
@@ -341,7 +341,7 @@ class Factor(Mongo):
                valid_days / self.close.shift(window)
 
 
-    def Energy(self, window=3, closed=None):
+    def energy(self, window=3, closed=None):
         """
         推广动能定理 E = 1/2 * m * v^2，其中 m 由质量推广至成交量，v 由速度推广至收益
         :param window: int, default = 6.
@@ -356,7 +356,7 @@ class Factor(Mongo):
         return result.rolling(window, closed=closed).sum()
 
 
-    def IMPLUSE(self, window=5, closed=None):
+    def impluse(self, window=5, closed=None):
         """
         推广冲量定理 I = F * t，即单位时间内物体所受合外力，所反映的便是 “力” 在时间上的累积。
         :param window: int, default = 5.
@@ -369,7 +369,7 @@ class Factor(Mongo):
         return self.rate.rolling(window, closed=closed).apply(impluse)
 
 
-    def Geometry(self, window=3, closed=None):
+    def geometry(self, window=3, closed=None):
         """
         grad_desc_geometry 是一个梯度下降函数，给定 “1” 作为一个整体，指定一个所需的窗口 window，利用梯度
         下降，将 “1” 按照权重分给前 window 天，其中距离今天越远的日期所分得权重越小，因为各种不稳定短期因素
@@ -387,7 +387,7 @@ class Factor(Mongo):
             lambda col: np.dot(col, weight))
 
 
-    def CGO(self, window=6):
+    def cgo(self, window=6):
 
         for dname in ["close", "vwap", "turnover"]:
             assert self.data[dname] is not None
@@ -402,7 +402,7 @@ class Factor(Mongo):
         return (self.close.shift(1) - result) / self.close.shift(1)
 
 
-    def TANH_MONEY(self, window=6, shift=(0, 0), squeeze=1, closed=None):
+    def tanh_money(self, window=6, shift=(0, 0), squeeze=1, closed=None):
         """
         为什么我要使用 tanh 函数？因为我发现这是tanh函数极其优秀的性质（同样的性质也体现在 tan 身上，只不过要在另
         一个领域）。
@@ -430,7 +430,7 @@ class Factor(Mongo):
             window, closed=closed).sum()
 
 
-    def TANH_Balanced_Money(self, window=6, shift=(0, 0), squeeze=1, closed=None):
+    def tanh_balanced_money(self, window=6, shift=(0, 0), squeeze=1, closed=None):
 
         """
         :param window: int, default = 6.
@@ -447,7 +447,7 @@ class Factor(Mongo):
         return result.rolling(window, closed=closed).sum()
 
 
-    def TANH_Weekly_Cumulation(self, window=5, shift=(0, 0), squeeze=1, closed=None):
+    def tanh_weekly_cumulation(self, window=5, shift=(0, 0), squeeze=1, closed=None):
         """
         :param window: int, default = 5.
         :param shift: 需要平移的量，输入为 (a, b) 的数组，最终效果为：tanh(x - a) + b
@@ -463,7 +463,7 @@ class Factor(Mongo):
         return result.rolling(window=window, closed=closed).sum()
 
 
-    def RSJ(self, window=7, closed=None):
+    def rsj(self, window=7, closed=None):
         """
         :param window: int, default = 7.
         :param closed: str in ["left", "right", "both", "neither"], default = None.
@@ -483,7 +483,7 @@ class Factor(Mongo):
                    lambda col: np.nansum(col ** 2))
 
 
-    def TURNOVER_VAR(self, window=12, closed=None):
+    def turnover_var(self, window=12, closed=None):
         """
         换手率的方差（即市场参与度波动率）
         :param window: int, default = 12.
@@ -496,7 +496,7 @@ class Factor(Mongo):
         return self.turnover.rolling(window=window, closed=closed).var()
 
 
-    def Price_Variation(self, window):
+    def price_variation(self, window):
         """
         :param window: int, default = 12.
         :return: A measure to the volatility of stock price.
@@ -508,7 +508,7 @@ class Factor(Mongo):
                self.vwap.rolling(window).var()
 
 
-    def CP_self(self, window=20, rise=True, closed=None):
+    def cp_self(self, window=20, rise=True, closed=None):
         """
         这种定义方法，相当于定义上影线或下影线与实体线长度之比的平方，再乘以今日换手率（进行 window 日标准化）这个乘数。
         :param window: int, default = 20. For window's day average turnover.
@@ -530,7 +530,7 @@ class Factor(Mongo):
         return result.rolling(window=window, closed=closed).sum()
 
 
-    def CP_Intraday(self):
+    def cp_intraday(self):
         """
         :return: 通过分钟级别 close数据计算的分钟收益率计算当日各股票的 CP 因子值。其中：
                 （1）将每天 9:30-11:30 以及 13:00-15:00 之间的 242 分钟，标记为第 1，2，3，...，242 分钟，称其为分钟序号。
@@ -545,7 +545,7 @@ class Factor(Mongo):
         return self.data["close_min"].groupby(level=0).agg(CP)
 
 
-    def CP_Mean(self, window=20, fillna=False, closed=None, intraday=None):
+    def cp_mean(self, window=20, fillna=False, closed=None, intraday=None):
         """
         :param window: int, default = 20.
         :param fillna: If fill NaNs, default for False, otherwise input a value.
@@ -561,11 +561,11 @@ class Factor(Mongo):
             return mvNeutralize(df=result, mv=self.mv, fillna=fillna)
 
         else:
-            result = self.CP_Intraday().rolling(window, closed=closed).mean()
+            result = self.cp_intraday().rolling(window, closed=closed).mean()
             return mvNeutralize(df=result, mv=self.mv, fillna=fillna)
 
 
-    def CP_Std(self, window=20, fillna=False, closed=None, intraday=None):
+    def cp_std(self, window=20, fillna=False, closed=None, intraday=None):
         """
         :param window: int, default = 20.
         :param fillna: If fill NaNs, default for False, otherwise input a value.
@@ -580,37 +580,37 @@ class Factor(Mongo):
             result = intraday.rolling(window, closed=closed).std()
             return mvNeutralize(df=result, mv=self.mv, fillna=fillna)
         else:
-            result = self.CP_self().rolling(window, closed=closed).std()
+            result = self.cp_self().rolling(window, closed=closed).std()
             return mvNeutralize(df=result, mv=self.mv, fillna=fillna)
 
 
-    def CP_Mean_Rank_Ascending(self, window=20, closed=None):
+    def cp_mean_rank_ascending(self, window=20, closed=None):
         """
         :param window: int, default = 20.
         :param closed: str in ["left", "right", "both", "neither"], default = None.
         :return: Return CP_Mean in an ascending rank order, starting from 1.
         """
 
-        cpm = self.CP_Mean(window=window, closed=closed)
+        cpm = self.cp_mean(window=window, closed=closed)
         for row in range(len(cpm)):
             cpm.iloc[row, :] = np.argsort(a=cpm.iloc[row, :], kind="quicksort")
         return cpm + 2
 
 
-    def CP_Std_Rank_Descending(self, window=20, closed=None):
+    def cp_std_rank_ascending(self, window=20, closed=None):
         """
         :param window: int, default = 20.
         :param closed: str in ["left", "right", "both", "neither"], default = None.
         :return: Return CP_Std in a descending rank order, starting from 1.
         """
 
-        cps = self.CP_Std(window=window, closed=closed)
+        cps = self.cp_std(window=window, closed=closed)
         for row in range(len(cps)):
             cps.iloc[row, :] = np.argsort(a=-cps.iloc[row, :], kind="quicksort")
         return cps + 2
 
 
-    def Monthly_CP(self, window=20, closed=None):
+    def monthly_cp(self, window=20, closed=None):
         """
         Confidence Persistence: 信心持久度。若内幕消息可信度低，那么很快会被辟谣，因此股价维持天数会很短。
         此处我以 20 日作为一个检验标准，即在 window = 20 的窗口内，观察市场走势特性。
@@ -619,13 +619,13 @@ class Factor(Mongo):
         :return: Confidence Persistence
         """
 
-        cpmean = self.CP_Mean_Rank_Ascending(window=window, closed=closed)
-        cpstd = self.CP_Std_Rank_Descending(window=window, closed=closed)
+        cpmean = self.cp_mean_rank_ascending(window=window, closed=closed)
+        cpstd = self.cp_std_rank_ascending(window=window, closed=closed)
         assert cpmean.shape == cpstd.shape
         return cpmean + cpstd
 
 
-    def Long_Power(self, window=13):
+    def long_power(self, window=13):
         """
         多头的一种度量方式
         :param window: int, default = 13.
@@ -635,11 +635,11 @@ class Factor(Mongo):
         assert self.high is not None
         assert self.close is not None
 
-        return (self.high - self.Price_ema(
+        return (self.high - self.price_ema(
             which_price="close", window=window)) / self.close
 
 
-    def Short_Power(self, window=13):
+    def short_power(self, window=13):
         """
         空头的一种度量方式
         :param window: int, default = 13.
@@ -649,11 +649,11 @@ class Factor(Mongo):
         assert self.low is not None
         assert self.close is not None
 
-        return (self.low - self.Price_ema(
+        return (self.low - self.price_ema(
             which_price="close", window=window)) / self.close
 
 
-    def Popularity(self, window=7, closed=None):
+    def popularity(self, window=7, closed=None):
         """
         :param window: int, default = 7.
         :param closed: str in ["left", "right", "both", "neither"], default = None.
@@ -669,7 +669,7 @@ class Factor(Mongo):
         return result[~np.isinf(result)]
 
 
-    def Price_Accelerity(self, window=6):
+    def price_accelerity(self, window=6):
         """
         :param window: int, default = 6.
         :return: Velocity of change of price.
@@ -681,7 +681,7 @@ class Factor(Mongo):
                self.close.shift(window)
 
 
-    def MFI(self, window=14, closed=None):
+    def mfi(self, window=14, closed=None):
         """
         Money Flow Index
         :param window: int, default = 14.
@@ -700,7 +700,7 @@ class Factor(Mongo):
         return 100 - 100 / (1 + money_ratio)
 
 
-    def CAR(self, window=6, market_return="hs300", closed=None):
+    def car(self, window=6, market_return="hs300", closed=None):
         """
         Cumulative Abnormal Return
         :param window: int, default = 6.
@@ -722,7 +722,7 @@ class Factor(Mongo):
         return abnormal_return.rolling(window=window, closed=closed).sum()
 
 
-    def DR(self, window=20, closed=None):
+    def dr(self, window=20, closed=None):
         """
         :param window: int, default = 20.
         :param closed: str in ["left", "right", "both", "neither"], default = None.
@@ -744,7 +744,7 @@ class Factor(Mongo):
         return result[~np.isinf(result)]
 
 
-    def VR(self, window=24, closed=None):
+    def vr(self, window=24, closed=None):
         """
         :param window: int, default = 24.
         :param closed: str in ["left", "right", "both", "neither"], default = None.
@@ -766,7 +766,7 @@ class Factor(Mongo):
         return ((AVS + 1 / 2 * CVS) / (BVS + 1 / 2 * CVS)).fillna(0)
 
 
-    def JumpTest(self, window=16, closed="left"):
+    def jumptest(self, window=16, closed="left"):
         """
         :param window: int, default = 16.
         :param closed: str in ["left", "right", "both", "neither"], default = "left".
@@ -781,7 +781,7 @@ class Factor(Mongo):
                np.sqrt(prod_consec_abslogr.rolling(window, closed=closed).sum())
 
 
-    def Jackknife_Weighted_Profit(self, window=10, closed=None, method="variation"):
+    def jackknife_weighted_profit(self, window=10, closed=None, method="variation"):
         """
         :param window: int, default = 10.
         :param closed: str in ["left", "right", "both", "neither"], default = "None".
@@ -797,7 +797,7 @@ class Factor(Mongo):
             lambda col: jackknife(col, method=method)[0])
 
 
-    def Volume_std(self, window=20, closed=None):
+    def volume_std(self, window=20, closed=None):
         """
         :param window: int, default = 20.
         :param closed: str in ["left", "right", "both", "neither"], default = "None".
@@ -809,7 +809,7 @@ class Factor(Mongo):
         return self.volume.rolling(window=window, closed=closed).std()
 
 
-    def Yield_var(self, window=20, closed=None):
+    def yield_var(self, window=20, closed=None):
         """
         :param window: int, default = 20.
         :param closed: str in ["left", "right", "both", "neither"], default = "None".
@@ -821,7 +821,7 @@ class Factor(Mongo):
         return self.rate.rolling(window=window, closed=closed).var()
 
 
-    def Volume_ema(self, window=10, fillna=None):
+    def volume_ema(self, window=10, fillna=None):
         """
         :param window: int, default = 20.
         :param fillna: If fill NaNs, default for False, otherwise input a value.
@@ -833,7 +833,7 @@ class Factor(Mongo):
         return EMA(self.volume, window=window, fillna=fillna)
 
 
-    def EMAC(self, window=20):
+    def emac(self, window=20):
         """
         window日指数移动均线
         :param window: int, default = 20.
@@ -846,7 +846,7 @@ class Factor(Mongo):
         return self.volume.ewm(alpha=2 / (window + 1)).mean() / self.close
 
 
-    def Combined_volstd_volema_turnovermean_10(self, window=10, closed=None):
+    def combined_volstd_volema_turnovermean_10(self, window=10, closed=None):
         """
         :param window: int, default = 10.
         :param closed: str in ["left", "right", "both", "neither"], default = "None".
@@ -863,7 +863,7 @@ class Factor(Mongo):
         return volema * volstd * turnovermean
 
 
-    def Upper_Envelop(self, weight=0.1, window=20, closed=None):
+    def upper_envelop(self, weight=0.1, window=20, closed=None):
         """
         :param weight: float in [0, 1], default = 0.1
         :param window: int, default = 20.
@@ -876,7 +876,7 @@ class Factor(Mongo):
         return (1 + weight) * self.high.rolling(window, closed=closed).mean()
 
 
-    def Lower_Envelop(self, weight=0.1, window=20, closed=None):
+    def lower_envelop(self, weight=0.1, window=20, closed=None):
         """
         :param weight: float in [0, 1], default = 0.1
         :param window: int, default = 20.
@@ -889,7 +889,7 @@ class Factor(Mongo):
         return (1 - weight) * self.low.rolling(window, closed=closed).mean()
 
 
-    def RSI_quick(self, window=25, closed=None):
+    def rsi_quick(self, window=25, closed=None):
         """
         :param window: RSI window length, set default as 25.
         :param closed: str in ["left", "right", "both", "neither"], default = None.
@@ -906,7 +906,7 @@ class Factor(Mongo):
         return 100 - 100 / (1 + RS_25)
 
 
-    def RSI_slow(self, window=100, closed=None):
+    def rsi_slow(self, window=100, closed=None):
         """
         :param window: RSI window length, set default as 100.
         :param closed: str in ["left", "right", "both", "neither"], default = None.
@@ -915,15 +915,15 @@ class Factor(Mongo):
 
         assert self.rate is not None
 
-        RS_100 = self.rate.rolling(window=window, closed=closed).apply(
+        rs_100 = self.rate.rolling(window=window, closed=closed).apply(
                     lambda series: np.nansum(series[series > 0])) / \
                  self.rate.rolling(window=window, closed=closed).apply(
                      lambda series: abs(np.nansum(series[series < 0])))
 
-        return 100 - 100 / (1 + RS_100)
+        return 100 - 100 / (1 + rs_100)
 
 
-    def ATR(self, usedPrice="close", window=1, closed="left"):
+    def atr(self, usedPrice="close", window=1, closed="left"):
         """
         :param usedPrice: Denote the type of prious-day-price used for calculation.
                 Default as "close", but can also use "vwap".
@@ -936,7 +936,7 @@ class Factor(Mongo):
         if usedPrice == "close":
             assert self.close is not None
             price = self.close.shift(1)
-        elif usedPrice == "vwap":
+        else:
             assert self.vwap is not None
             price = self.vwap.shift(1)
 
@@ -951,7 +951,7 @@ class Factor(Mongo):
         return TR.rolling(window=window, closed=closed).mean()
 
 
-    def ChandelierExit(self, usedPrice="close", multiplier=1.85, window=1, closed="left"):
+    def chandelier_exit(self, usedPrice="close", multiplier=1.85, window=1, closed="left"):
         """
         :param usedPrice: Denote which type of prices is used for calculation.
                 Default as "close", but can also use "vwap".
@@ -968,14 +968,14 @@ class Factor(Mongo):
         assert self.high is not None
         assert self.low is not None
 
-        atr = multiplier * self.ATR(usedPrice=usedPrice, window=window, closed=closed)
+        atr = multiplier * self.atr(usedPrice=usedPrice, window=window, closed=closed)
         ExitLong = self.high.rolling(window=window, closed=closed).max() - atr
         ExitShort = self.low.rolling(window=window, closed=closed).min() + atr
 
         return 1 * (self.close > ExitShort) - (self.close < ExitLong)
 
 
-    def OBV(self):
+    def obv(self):
         """
         OBV_today = OBV_prev + volume_today         if close_today > close_prev
                   = OBV_prev + 0                    if close_today == close_prev
@@ -997,7 +997,7 @@ class Factor(Mongo):
         return obv
 
 
-    def MAOBV(self, window=30, closed=None):
+    def maobv(self, window=30, closed=None):
         """
         window日 移动平均 OBV
         :param window: int, default = 12.
@@ -1005,6 +1005,6 @@ class Factor(Mongo):
         :return:
         """
 
-        obv = self.OBV()
+        obv = self.obv()
 
         return obv.rolling(window=window, closed=closed).mean()
