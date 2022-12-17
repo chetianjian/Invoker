@@ -12,8 +12,9 @@ class Mongo(object):
         self.available_dname = ["open", "close", "high", "low", "volume", "money",
                                 "rate", "vwap", "mv", "turnover", "adj", "xdxr",
                                 "stock_day", "index_day", "hs300", "zz500", "reports",
-                                "stock_block", "stock_list", "stock_basic", "stock_info",
-                                "etf_list", "index_list", "close_min"]
+                                "stock_block", "stock_list", "stock_basic", "daily_basic",
+                                "stock_info", "etf_list", "index_list", "close_min",
+                                "namechange"]
 
         self.data = dict.fromkeys(self.available_dname)
 
@@ -27,7 +28,7 @@ class Mongo(object):
     @property
     def list_schema(self) -> list:
         # List all schemas' names inside the given database.
-        return self.db.collection_names()
+        return self.db.list_collection_names()
 
 
     @property
@@ -79,7 +80,6 @@ class Mongo(object):
 
     @property
     def turnover(self) -> pd.DataFrame:
-
         return self.data["turnover"]
 
 
@@ -102,14 +102,30 @@ class Mongo(object):
     def xdxr(self) -> pd.DataFrame:
         return self.data["xdxr"]
 
+
     @property
-    def basic(self) -> pd.DataFrame:
+    def block(self) -> pd.DataFrame:
+        return self.data["stock_block"]
+
+
+    @property
+    def stock_basic(self) -> pd.DataFrame:
         return self.data["stock_basic"]
+
+
+    @property
+    def daily_basic(self) -> pd.DataFrame:
+        return self.data["daily_basic"]
 
 
     @property
     def info(self) -> pd.DataFrame:
         return self.data["stock_info"]
+
+
+    @property
+    def namechange(self) -> pd.DataFrame:
+        return self.data["namechange"]
 
 
     @classmethod
@@ -158,16 +174,17 @@ class Mongo(object):
                         (pd.to_datetime(start_date) <= pd.to_datetime(self.data[dname].index))
                         &
                         (pd.to_datetime(self.data[dname].index) <= pd.to_datetime(end_date))
-                        ]
+                    ]
 
                     print(f"Successfully truncated for {dname} data.")
 
                 else:
                     self.data[dname] = self.data[dname].reset_index("code")[
-                        (pd.to_datetime(start_date) <= pd.to_datetime(self.data[dname].reset_index("code").index))
+                        (pd.to_datetime(start_date) <=
+                         pd.to_datetime(self.data[dname].reset_index("code").index))
                         &
-                        (pd.to_datetime(self.data[dname].reset_index("code").index) <= pd.to_datetime(end_date))
-                        ].reset_index().set_index(self.data[dname].index.names)
+                        (pd.to_datetime(self.data[dname].reset_index("code").index) <=
+                         pd.to_datetime(end_date))].reset_index().set_index(self.data[dname].index.names)
 
                     print(f"Successfully truncated for {dname} data.")
 
@@ -419,7 +436,15 @@ class Mongo(object):
         print("Stock basic data loaded successfully.")
         return df
 
+
     def load_stock_info(self):
+        """
+        :return: Load stock information, including the following items:
+                流通股, 总股本, 国家股, 发起人法人股, 法人股, B股, H股, 职工股, 总资产, 流动资产, 固定资产,
+                固定资产, 无形资产, 股东人数, 流动负债, 长期负债, 资本公积金, 净资产, 主营收入, 主营利润,
+                应收账款, 营业利润, 投资收入, 经营现金流, 总现金流, 存货, 利润总和, 税后利润, 净利润,
+                未分配利润, 每股净资产
+        """
 
         df = pd.DataFrame(self.db["stock_info"].find()).drop(columns=["_id"])
 
@@ -441,4 +466,15 @@ class Mongo(object):
         self.data["stock_info"] = df
         print("Stock information loaded successfully.")
         return df
+
+
+    def load_namechange(self):
+        """
+        :return: Load the historical name of stocks and the reason why the name was changed.
+        """
+
+        self.data["namechange"] = pd.DataFrame(self.db["namechange"].find()).drop(
+            columns=["_id"]).set_index("code")
+        print("Name change information loaded successfully.")
+        return self.data["namechange"]
 
