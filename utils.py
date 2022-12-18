@@ -79,8 +79,7 @@ def mvNeutralize(df: pd.DataFrame, mv: pd.DataFrame, fillna=False) -> pd.DataFra
     data, mv = df.fillna(0), mv.fillna(0)
     for row in range(len(data)):
         features = data.iloc[row, :].values.reshape(-1, 1)
-        model = LinearRegression().fit(X=features, y=mv.iloc[row, :].values)
-        pred = model.predict(X=features)
+        pred = LinearRegression().fit(X=features, y=mv.iloc[row, :].values).predict(X=features)
         data.iloc[row, :] = data.iloc[row, :] - pred
 
     return data if not fillna else data.fillna(fillna)
@@ -94,7 +93,7 @@ def EMA(df: pd.DataFrame, window, fillna=False) -> pd.DataFrame:
     :return: Exponential Moving Average.
     """
 
-    return df.ewm(alpha=2/(window+1)).mean() if not fillna else df.ewm(alpha=2/(window+1)).mean().fillna(fillna)
+    return df.ewm(alpha=2 / (window + 1)).mean() if not fillna else df.ewm(alpha=2 / (window + 1)).mean().fillna(fillna)
 
 
 def impluse(arr):
@@ -166,6 +165,10 @@ def jackknife(series: np.array, method) -> tuple:
         estimator = lambda arr: np.nanvar(arr)
     elif method == "mean":
         estimator = lambda arr: np.nanmean(arr)
+    else:
+        estimator = None
+
+    assert estimator is not None
 
     array = series.values
 
@@ -233,17 +236,15 @@ def tFilteredReturn(code: str, signal: pd.Series, rdf: pd.DataFrame) -> float:
     """
 
     cr, idx, rate = 0, signal.index, rdf[code]
-    for _ in range(len(signal)-1):
-        start, end = idx[_], idx[_+1]
-        cr += signal[_] * (rate.loc[start: end].sum() - rate[idx[_]] + rate[idx[_+1]])
+    for _ in range(len(signal) - 1):
+        start, end = idx[_], idx[_ + 1]
+        cr += signal[_] * (rate.loc[start: end].sum() - rate[idx[_]] + rate[idx[_ + 1]])
     return cr
 
 
-
 ########################################################################################################################
 ########################################################################################################################
 ########################################################################################################################
-
 
 
 def draw_line(series, legend=None, jupyter=True, color="blue", description=None):
@@ -276,7 +277,6 @@ def draw_line(series, legend=None, jupyter=True, color="blue", description=None)
 
 
 def draw_lines(series_list, color_list, legend_list, jupyter=True, description=None):
-
     assert len(series_list) == len(color_list) == len(legend_list)
 
     traces = []
@@ -310,7 +310,6 @@ def draw_lines(series_list, color_list, legend_list, jupyter=True, description=N
 
 
 def draw_df_lines(df: pd.DataFrame, color_list, jupyter=True, title=""):
-
     assert df.shape[1] == len(color_list)
 
     traces = []
@@ -351,4 +350,3 @@ def draw_candle(df: pd.DataFrame, n=0):
         low=df["low"],
         close=df["close"])])
     fig.show()
-
