@@ -141,7 +141,7 @@ class Mongo(object):
 
     @property
     def index_day(self):
-        return self.data["index_daily"]
+        return self.data["index_day"]
 
 
     @classmethod
