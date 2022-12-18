@@ -10,9 +10,10 @@ class Mongo(object):
         self.db = self.client.get_database("quantaxis")
 
         self.available_dname = ["open", "close", "high", "low", "volume", "money",
-                                "rate", "vwap", "mv", "turnover", "adj", "xdxr",
-                                "stock_day", "index_day", "hs300", "zz500", "reports",
-                                "stock_block", "stock_list", "stock_basic", "daily_basic",
+                                "rate", "vwap", "adj", "mv", "turnover", "circ_mv",
+                                "circ_turnvoer", "xdxr", "stock_day", "index_day",
+                                "hs300", "zz500", "reports", "stock_block",
+                                "stock_list", "stock_basic", "daily_basic",
                                 "stock_info", "etf_list", "index_list", "close_min",
                                 "namechange"]
 
@@ -32,7 +33,7 @@ class Mongo(object):
 
 
     @property
-    def list_trading_day(self) -> list:
+    def calendar(self) -> list:
         # List the historical record of trading days in the database.
         return self.data["close"].index
 
@@ -41,6 +42,11 @@ class Mongo(object):
     def list_stock_code(self) -> list:
         # Return the code list of all stocks in the database.
         return self.data["close"].columns
+
+
+    @property
+    def cached(self) -> list:
+        return [dname for dname in self.available_dname if self.data[dname] is not None]
 
 
     @property
@@ -128,6 +134,16 @@ class Mongo(object):
         return self.data["namechange"]
 
 
+    @property
+    def index_list(self):
+        return self.data["index_list"]
+
+
+    @property
+    def index_day(self):
+        return self.data["index_daily"]
+
+
     @classmethod
     def single_stock_day(cls, code: str) -> pd.DataFrame:
         return pd.DataFrame(cls().db["stock_day"].find({"code": code})).drop(
@@ -187,7 +203,6 @@ class Mongo(object):
                          pd.to_datetime(end_date))].reset_index().set_index(self.data[dname].index.names)
 
                     print(f"Successfully truncated for {dname} data.")
-
             else:
                 continue
 
@@ -199,13 +214,13 @@ class Mongo(object):
         """
 
         pass
-        threshold = len(self.list_trading_day) * maxNanProp
+        threshold = len(self.calendar) * maxNanProp
 
         for dname in self.available_dname:
             count = 0
             if self.data[dname] is None:
                 continue
-            elif self.data[dname].shape == (len(self.list_trading_day), len(self.list_stock_code)):
+            elif self.data[dname].shape == (len(self.calendar), len(self.list_stock_code)):
                 for col in self.list_stock_code[::-1]:
                     if np.nansum(np.isnan(self.data[dname][col])) > threshold:
                         count += 1
@@ -237,10 +252,103 @@ class Mongo(object):
         print("Daily rate loaded successfully.")
 
 
+    def load_total_mv(self):
+        """
+        :return: Load total market capitalization into self.data dictionary.
+        """
+
+        if self.data["stock_list"] is None:
+            self.load_stock_list()
+
+        df = pd.DataFrame(index=self.calendar)
+        for code in self.data["stock_list"]:
+            tmp = pd.DataFrame(
+                self.db["daily_basic"].find({"code": code})
+            )[["trade_date", "total_mv"]]
+            tmp.rename(columns={"trade_date": "date"}, inplace=True)
+            tmp["date"] = list(map(lambda d: d[0:4] + "-" + d[4:6] + "-" + d[6:], tmp["date"]))
+            df[code] = tmp.set_index("date")
+
+        self.data["mv"] = df
+
+        print("Stock total market capitalization loaded successfully.")
+        return df
+
+
+    def load_circ_mv(self):
+        """
+        :return: Load information of circulating market capitalization into self.data dictionary.
+        """
+
+        if self.data["stock_list"] is None:
+            self.load_stock_list()
+
+        df = pd.DataFrame(index=self.calendar)
+        for code in self.data["stock_list"]:
+            tmp = pd.DataFrame(
+                self.db["daily_basic"].find({"code": code})
+            )[["trade_date", "circ_mv"]]
+            tmp.rename(columns={"trade_date": "date"}, inplace=True)
+            tmp["date"] = list(map(lambda d: d[0:4] + "-" + d[4:6] + "-" + d[6:], tmp["date"]))
+            df[code] = tmp.set_index("date")
+
+        self.data["circ_mv"] = df
+
+        print("Stock circulating market capitalization loaded successfully.")
+        return df
+
+
+    def load_turnover(self):
+        """
+        :return: Load turnover ratio into self.data dictionary.
+        """
+
+        if self.data["stock_list"] is None:
+            self.load_stock_list()
+
+        df = pd.DataFrame(index=self.calendar)
+        for code in self.data["stock_list"]:
+            tmp = pd.DataFrame(
+                self.db["daily_basic"].find({"code": code})
+            )[["trade_date", "turnover_rate"]]
+            tmp.rename(columns={"trade_date": "date", "turnover_rate": "turnover"}, inplace=True)
+            tmp["date"] = list(map(lambda d: d[0:4] + "-" + d[4:6] + "-" + d[6:], tmp["date"]))
+            df[code] = tmp.set_index("date")
+
+        self.data["turnover"] = df
+
+        print("Stock turnover ratio loaded successfully.")
+        return df
+
+
+    def load_circ_turnover(self):
+        """
+        :return: Load turnover ratio of circulating capitalization into self.data dictionary.
+        """
+
+        if self.data["stock_list"] is None:
+            self.load_stock_list()
+
+        df = pd.DataFrame(index=self.calendar)
+        for code in self.data["stock_list"]:
+            tmp = pd.DataFrame(
+                self.db["daily_basic"].find({"code": code})
+            )[["trade_date", "turnover_rate_f"]]
+            tmp.rename(columns={"trade_date": "date", "turnover_rate_f": "circ_turnover"}, inplace=True)
+            tmp["date"] = list(map(lambda d: d[0:4] + "-" + d[4:6] + "-" + d[6:], tmp["date"]))
+            df[code] = tmp.set_index("date")
+
+        self.data["circ_turnover"] = df
+
+        print("Stock circulating turnover ratio loaded successfully.")
+        return df
+
+
     def load_index_day(self):
         """
         :return: Load daily index data into self.data dictionary.
         """
+
         df = pd.DataFrame(self.db["index_day"].find()).drop(
             columns=["_id", "date_stamp"]
         ).rename(

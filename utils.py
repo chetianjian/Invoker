@@ -79,7 +79,8 @@ def mvNeutralize(df: pd.DataFrame, mv: pd.DataFrame, fillna=False) -> pd.DataFra
     data, mv = df.fillna(0), mv.fillna(0)
     for row in range(len(data)):
         features = data.iloc[row, :].values.reshape(-1, 1)
-        pred = LinearRegression().fit(X=features, y=mv.iloc[row, :].values).predict(features)
+        model = LinearRegression().fit(X=features, y=mv.iloc[row, :].values)
+        pred = model.predict(X=features)
         data.iloc[row, :] = data.iloc[row, :] - pred
 
     return data if not fillna else data.fillna(fillna)
