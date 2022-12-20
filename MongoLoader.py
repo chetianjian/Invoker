@@ -9,13 +9,17 @@ class Mongo(object):
         self.client = pymongo.MongoClient("mongodb://localhost:27017/")
         self.db = self.client.get_database("quantaxis")
 
-        self.available_dname = ["open", "close", "high", "low", "volume", "money",
-                                "rate", "vwap", "adj", "mv", "turnover", "circ_mv",
-                                "circ_turnvoer", "xdxr", "stock_day", "index_day",
-                                "hs300", "zz500", "reports", "stock_block",
-                                "stock_list", "stock_basic", "daily_basic",
-                                "stock_info", "etf_list", "index_list", "close_min",
-                                "namechange"]
+        self.available_dname = [
+            "stock_list", "index_list", "etf_list",
+            "open", "close", "high", "low", "volume", "money", "rate", "vwap",
+            "adj", "mv", "turnover", "circ_mv", "circ_turnvoer", "xdxr",
+            "index_open", "index_close", "index_high", "index_low", "index_volume",
+            "index_money", "index_rate", "index_vwap",
+            "reports", "stock_block", "stock_basic", "daily_basic", "stock_info",
+            "namechange",
+            "hs300", "zz500", "sh50",
+            "close_min",
+        ]
 
         self.data = dict.fromkeys(self.available_dname)
 
@@ -44,9 +48,27 @@ class Mongo(object):
         return self.data["close"].columns
 
 
+    # -------------------------------------------------------------------------------------------
+    # Quick calls for stock list, index list and etf list respectively.
+
+
     @property
-    def cached(self) -> list:
-        return [dname for dname in self.available_dname if self.data[dname] is not None]
+    def stock_list(self):
+        return self.data["stock_list"]
+
+
+    @property
+    def index_list(self):
+        return self.data["index_list"]
+
+
+    @property
+    def etf_list(self):
+        return self.data["etf_list"]
+
+
+    # -------------------------------------------------------------------------------------------
+    # Properties for quick calling of daily stock data.
 
 
     @property
@@ -134,23 +156,119 @@ class Mongo(object):
         return self.data["namechange"]
 
 
-    @property
-    def index_list(self):
-        return self.data["index_list"]
+    # -------------------------------------------------------------------------------------------
+    # Properties for quick calling of index daily data.
+    # Format: initiate with "i" for representing they are index data.
 
 
     @property
-    def index_day(self):
-        return self.data["index_day"]
+    def iopen(self) -> pd.DataFrame:
+        return self.data["index_open"]
+
+    @property
+    def iclose(self) -> pd.DataFrame:
+        return self.data["index_close"]
+
+
+    @property
+    def ihigh(self) -> pd.DataFrame:
+        return self.data["index_high"]
+
+
+    @property
+    def ilow(self) -> pd.DataFrame:
+        return self.data["index_low"]
+
+
+    @property
+    def ivolume(self) -> pd.DataFrame:
+        return self.data["index_volume"]
+
+
+    @property
+    def imoney(self) -> pd.DataFrame:
+        return self.data["index_money"]
+
+
+    @property
+    def irate(self) -> pd.DataFrame:
+        return self.data["index_rate"]
+
+
+    @property
+    def ivwap(self) -> pd.DataFrame:
+        return self.data["index_vwap"]
+
+
+    # -------------------------------------------------------------------------------------------
+    # Properties for quick calling of several special
+    # Format: initiate with "i" for representing they are index data.
+
+
+    @property
+    def hs300(self):
+        if self.data["hs300"] is None:
+            self.data["hs300"] = self.single_index_day(code="000300")
+        return self.data["hs300"]
+
+
+    @property
+    def zz500(self):
+        if self.data["zz500"] is None:
+            self.data["zz500"] = self.single_index_day(code="000905")
+        return self.data["zz500"]
+
+
+    @property
+    def sh50(self):
+        if self.data["sh50"] is None:
+            self.data["sh50"] = self.single_index_day(code="000016")
+        return self.data["sh50"]
+
+
+    # -------------------------------------------------------------------------------------------
+    # For single query.
 
 
     @classmethod
     def single_stock_day(cls, code: str) -> pd.DataFrame:
+        """
+        :param code: Target stock code.
+        :return: A dataframe that containing daily data for the given stock code.
+                    * Note that the data of a single underlying would not be stored
+                        in the Invoker.data dictionary.
+        """
+
         return pd.DataFrame(cls().db["stock_day"].find({"code": code})).drop(
             columns=["_id", "date_stamp"]
         ).rename(
             columns={"amount": "money", "vol": "volume"}
         ).set_index("date")
+
+
+    @classmethod
+    def single_index_day(cls, code: str) -> pd.DataFrame:
+        """
+        :param code: Target index code (including ETFs).
+        :return: A dataframe that containing daily data for the given index or etf code.
+                    * Note that the data of a single underlying would not be stored
+                        in the Invoker.data dictionary.
+        """
+
+        return pd.DataFrame(cls().db["index_day"].find({"code": code})).drop(
+            columns=["_id", "date_stamp"]
+        ).rename(
+            columns={"amount": "money", "vol": "volume"}
+        ).set_index("date")
+
+
+    # -------------------------------------------------------------------------------------------
+    # Some basic functions.
+
+
+    @property
+    def cached(self) -> list:
+        return [dname for dname in self.available_dname if self.data[dname] is not None]
 
 
     def release_memory(self, dname=None, clear_all=False):
@@ -226,6 +344,15 @@ class Mongo(object):
                         count += 1
                         del self.data[dname][col]
                 print(f"Succesfully removed {count} columns from stock {dname} data.")
+
+
+    # -------------------------------------------------------------------------------------------
+    # Data loading functions.
+    # Usage:
+    #       1. inv = Invoker()
+    #          Invoker.load_func(inv)
+    # Or:
+    #       2. inv.load_func()
 
 
     def load_stock_day(self):
@@ -357,17 +484,17 @@ class Mongo(object):
 
         for table_name in ["open", "close", "low", "high", "volume", "money"]:
             self.data["index_" + table_name] = df[table_name].unstack()
-            print(f"Daily index {table_name} data loaded successfully.")
+            print(f"Daily index {table_name} loaded successfully.")
 
         self.data["index_rate"] = self.data["close"].diff(1) / self.data["close"].shift(1)
 
         del df
 
         self.data["index_vwap"] = ((self.data["high"] + self.data["low"] + self.data["close"]) / 3)
-        print("Daily index vwap data loaded successfully.")
+        print("Daily index vwap loaded successfully.")
 
         self.data["index_rate"] = self.data["close"].diff(1) / self.data["close"].shift(1)
-        print("Daily index return data loaded successfully.")
+        print("Daily index return loaded successfully.")
 
 
     def load_open_day(self):
@@ -499,7 +626,7 @@ class Mongo(object):
         self.data["index_list"] = pd.DataFrame(self.db["index_list"].find()).drop(
             columns=["_id", "volunit", "decimal_point", "sec"]).set_index("code")
 
-        print("Index list data loaded successfully.")
+        print("Index list loaded successfully.")
         return self.data["index_list"]
 
 
@@ -585,4 +712,5 @@ class Mongo(object):
             columns=["_id"]).set_index("code")
         print("Name change information loaded successfully.")
         return self.data["namechange"]
+
 
