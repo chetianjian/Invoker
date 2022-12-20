@@ -45,6 +45,9 @@ class Mongo(object):
     @property
     def list_stock_code(self) -> list:
         # Return the code list of all stocks in the database.
+        # * Note:
+        #       self.stock_list including the codes of stocks that are not listed yet.
+        #       self.list_stock_code only contains the codes of currently listed stocks.
         return self.data["close"].columns
 
 
@@ -54,16 +57,25 @@ class Mongo(object):
 
     @property
     def stock_list(self):
+        # * Note:
+        #       self.stock_list including the codes of stocks that are not listed yet.
+        #       self.list_stock_code only contains the codes of currently listed stocks.
+        if self.data["stock_list"] is None:
+            self.data["stock_list"] = self.load_stock_list()
         return self.data["stock_list"]
 
 
     @property
     def index_list(self):
+        if self.data["index_list"] is None:
+            self.data["index_list"] = self.load_index_list()
         return self.data["index_list"]
 
 
     @property
     def etf_list(self):
+        if self.data["etf_list"] is None:
+            self.data["etf_list"] = self.load_etf_list()
         return self.data["etf_list"]
 
 
