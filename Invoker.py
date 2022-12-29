@@ -62,7 +62,7 @@ class Invoker(Factor, Strategy, Alpha101):
         :param name: The name of the queried block, such as "地下管网".
         :return: A list of matching stock codes.
         """
-        result = pd.DataFrame(cls().db["stock_block"].find({"blockname": "地下管网"}))
+        result = pd.DataFrame(cls().db["stock_block"].find({"blockname": name}))
         return list(set(result["code"])) if 0 not in result.shape else None
 
 
