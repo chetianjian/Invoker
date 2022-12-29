@@ -360,9 +360,9 @@ class Factor(Mongo):
     def ppo(self):
         """
         PPO: Price Oscillator Indicator. (追踪动量，类似于MACD).
-        PPO Line: [(12-day EMA - 26-day EMA) / 26-day EMA] * 100
-        Signal Line: 9-day EMA of PPO
-        PPO Histogram: PPO - Signal Line
+        PPO Line: [(12-day EMA - 26-day EMA) / 26-day EMA] * 100.
+        Signal Line: 9-day EMA of PPO.
+        PPO Histogram: PPO - Signal Line.
         :return:
         """
 
@@ -1076,5 +1076,7 @@ class Factor(Mongo):
         obv = self.obv()
 
         return obv.rolling(window=window, closed=closed).mean()
+
+
 
 

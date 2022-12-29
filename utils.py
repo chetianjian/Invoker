@@ -4,6 +4,35 @@ import plotly
 import plotly.express as px
 import plotly.graph_objects as go
 from sklearn.linear_model import LinearRegression
+from scipy.stats import rankdata
+
+
+def rolling_rank(arr):
+    """
+    :param arr: Numpy array.
+    :return: The rank of the last value in the array.
+    """
+    return rankdata(arr)[-1]
+
+
+def stddev(df, window):
+    """
+    Rolling standard deviation.
+    :param df: Target DataFrame.
+    :param window: Rolling window size.
+    :return: DataFrame consists of standard deviations over the
+             past-window-days for each line of the original input.
+    """
+    return df.rolling(window).std()
+
+
+def ts_rank(df, window=10):
+    """
+    :param df: Target DataFrame.
+    :param window: Rolling window size.
+    :return: a pandas DataFrame with the time-series rank over the past window days.
+    """
+    return df.rolling(window).apply(rolling_rank)
 
 
 def seriesPosNegSumRatio(series):

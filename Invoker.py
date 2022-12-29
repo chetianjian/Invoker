@@ -2,11 +2,12 @@ from typing import List
 
 from Factor import Factor
 from Strategy import Strategy
+from Alpha101 import Alpha101
 from utils import *
 
 
 # noinspection PyBroadException
-class Invoker(Factor, Strategy):
+class Invoker(Factor, Strategy, Alpha101):
     def __init__(self):
         # print("I am a beacon of knowledge blazing out across a black sea of ignorance.")
         super().__init__()
