@@ -145,21 +145,22 @@ class Mongo(object):
 
     @property
     def block(self) -> pd.DataFrame:
+        if self.data["stock_block"] is None:
+            self.load_stock_block()
         return self.data["stock_block"]
 
 
     @property
     def stock_basic(self) -> pd.DataFrame:
+        if self.data["stock_basic"] is None:
+            self.load_stock_basic()
         return self.data["stock_basic"]
 
 
     @property
-    def daily_basic(self) -> pd.DataFrame:
-        return self.data["daily_basic"]
-
-
-    @property
     def info(self) -> pd.DataFrame:
+        if self.data["stock_info"] is None:
+            self.load_stock_info()
         return self.data["stock_info"]
 
 
@@ -724,5 +725,4 @@ class Mongo(object):
             columns=["_id"]).set_index("code")
         print("Name change information loaded successfully.")
         return self.data["namechange"]
-
 

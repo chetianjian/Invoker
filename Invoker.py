@@ -36,13 +36,33 @@ class Invoker(Factor, Strategy):
 
 
     @classmethod
+    def name2code(cls, name: str) -> str:
+        """
+        :param name: A single stock name.
+        :return: The corresponding code of the given stock.
+        """
+        result = pd.DataFrame(cls().db["stock_list"].find({"name": name}))
+        return result["code"][0] if 0 not in result.shape else None
+
+
+    @classmethod
     def code2block(cls, code: str) -> List[str]:
         """
         :param code: A single stock code.
         :return: The block names which the stock belongs to.
         """
-        result = pd.DataFrame(Invoker().db["stock_block"].find({"code": code}))
+        result = pd.DataFrame(cls().db["stock_block"].find({"code": code}))
         return list(set(result["blockname"])) if 0 not in result.shape else None
+
+
+    @classmethod
+    def block2code(cls, name: str) -> List[str]:
+        """
+        :param name: The name of the queried block, such as "地下管网".
+        :return: A list of matching stock codes.
+        """
+        result = pd.DataFrame(cls().db["stock_block"].find({"blockname": "地下管网"}))
+        return list(set(result["code"])) if 0 not in result.shape else None
 
 
     def yield_candle(self, code_list, n=0):

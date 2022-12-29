@@ -325,6 +325,56 @@ class Factor(Mongo):
         return result[~np.isinf(result)]
 
 
+    def roc(self, window=9):
+        """
+        ROC: Rate of Change indicator.
+             100 * (当前收盘价 - window天前收盘价) / window天前收盘价
+        :param window: int, default = 9.
+        :return: window-days Rate of Change indicator
+        """
+
+        assert self.close is not None
+
+        return 100 * self.close / self.close.shift(window) - 100
+
+
+    def kst(self):
+        """
+        KST: Know Sure Thing
+             ROCMA1 = 10 Period SMA of 10 Period ROC
+             ROCMA2 = 10 Period SMA of 15 Period ROC
+             ROCMA3 = 10 Period SMA of 20 Period ROC
+             ROCMA4 = 15 Period SMA of 30 Period ROC
+        :return: KST = (ROCMA1 * 1) + (ROCMA2 * 2) + (ROCMA3 * 3) + (ROCMA4 * 4)
+        """
+
+        rocma_1 = self.roc(10).rolling(10).mean()
+        rocma_2 = self.roc(15).rolling(10).mean()
+        rocma_3 = self.roc(20).rolling(10).mean()
+        rocma_4 = self.roc(30).rolling(15).mean()
+
+        result = rocma_1 + rocma_2 * 2 + rocma_3 * 3 + rocma_4 * 4
+        return result
+
+
+    def ppo(self):
+        """
+        PPO: Price Oscillator Indicator. (追踪动量，类似于MACD).
+        PPO Line: [(12-day EMA - 26-day EMA) / 26-day EMA] * 100
+        Signal Line: 9-day EMA of PPO
+        PPO Histogram: PPO - Signal Line
+        :return:
+        """
+
+        assert self.vwap is not None
+
+        ppo_line = 100 * self.vwap.rolling(12).mean() / self.vwap.rolling(26).mean() - 100
+        signal_line = ppo_line.rolling(9).mean()
+        ppo_histogram = ppo_line - signal_line
+
+        return ppo_histogram
+
+
     def weighted_pv_trend_weekly(self, window=7, closed=None):
         """
         :param window: int, default = 7.
@@ -889,6 +939,24 @@ class Factor(Mongo):
         return (1 - weight) * self.low.rolling(window, closed=closed).mean()
 
 
+    def rsi(self, window=6, closed=None):
+        """
+        :param window: RSI window length, set default as 6.
+        :param closed: str in ["left", "right", "both", "neither"], default = None.
+        :return: RSI values when RSI length takes 25.
+        """
+
+        assert self.rate is not None
+
+        rs = self.rate.rolling(window=window, closed=closed).apply(
+                    lambda series: np.nansum(series[series > 0])) / \
+                self.rate.rolling(window=window, closed=closed).apply(
+                    lambda series: abs(np.nansum(series[series < 0])))
+
+        return 100 - 100 / (1 + rs)
+
+
+
     def rsi_quick(self, window=25, closed=None):
         """
         :param window: RSI window length, set default as 25.
@@ -898,12 +966,12 @@ class Factor(Mongo):
 
         assert self.rate is not None
 
-        RS_25 = self.rate.rolling(window=window, closed=closed).apply(
+        rs_25 = self.rate.rolling(window=window, closed=closed).apply(
                     lambda series: np.nansum(series[series > 0])) / \
                 self.rate.rolling(window=window, closed=closed).apply(
                     lambda series: abs(np.nansum(series[series < 0])))
 
-        return 100 - 100 / (1 + RS_25)
+        return 100 - 100 / (1 + rs_25)
 
 
     def rsi_slow(self, window=100, closed=None):
@@ -1002,9 +1070,11 @@ class Factor(Mongo):
         window日 移动平均 OBV
         :param window: int, default = 12.
         :param closed: str in ["left", "right", "both", "neither"], default = None.
-        :return:
+        :return: OBV moving average.
         """
 
         obv = self.obv()
 
         return obv.rolling(window=window, closed=closed).mean()
+
+
