@@ -79,8 +79,8 @@ class Alpha101(Mongo):
         """
 
         sumprod = self.open.rolling(5).sum() * self.rate.rolling(5).sum()
-
         return -1 * (sumprod - sumprod.shift(10)).rank(pct=True)
+
 
     def alpha_022(self):
         """
@@ -124,7 +124,6 @@ class Alpha101(Mongo):
                      (self.close - self.low)).diff(9)
 
 
-
     def alpha_054(self):
         """
         :return: ((-1 * ((low - close) * (open^5))) / ((low - high) * (close^5)))
@@ -132,6 +131,7 @@ class Alpha101(Mongo):
 
         return -1 * ((self.low - self.close) * np.power(self.open, 5)) / \
             ((self.low - self.high) * np.power(self.close, 5))
+
 
     def alpha_101(self):
         """
