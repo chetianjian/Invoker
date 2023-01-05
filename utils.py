@@ -38,18 +38,76 @@ def ts_rank(df, window=1):
     return df.rolling(window).apply(rolling_rank)
 
 
-def covwith(df1: pd.DataFrame, df2: pd.DataFrame, window=1) -> pd.Series:
+def ts_min(df, window) -> pd.DataFrame:
+    """
+    :param df: Input dataframe.
+    :param window: The rolling window size.
+    :return: Time-series minimum over the past 'window' days.
+    """
+    return df.rolling(window=window).min()
+
+
+def ts_max(df, window) -> pd.DataFrame:
+    """
+    :param df: Input dataframe.
+    :param window: The rolling window size.
+    :return: Time-series maximum over the past 'window' days.
+    """
+    return df.rolling(window=window).max()
+
+
+def corr(df1, df2, window) -> pd.DataFrame:
     """
     :param df1: First dataframe.
     :param df2: Second dataframe.
-    :param window: Default to 1. Rolling window size applied to df2.
-    :return: A pandas.Series instance with column-wise covariances between
-             df1 and df2, meaning that df1 and df2 should be identical in
-             their shapes.
+    :param window: The rolling window size.
+    :return: Rolling correlations between dataframes df1 and df, meaning that
+             df1 and df2 should be identical in their shapes.
     """
 
-    df2 = df2.shift(periods=window)
-    return df1.std() * df2.std() * df1.corrwith(df2)
+    try:
+        assert df1.shape == df2.shape
+    except:
+        msg = f"""
+        Input dataframes should be identical in their shapes. \n
+        Received shapes: {df1.shape} and {df2.shape}
+        """
+        raise AssertionError(msg)
+
+    return df1.rolling(window=window).corr(df2)
+
+
+def covar(df1: pd.DataFrame, df2: pd.DataFrame, window) -> pd.DataFrame:
+    """
+    :param df1: First dataframe.
+    :param df2: Second dataframe.
+    :param window: The rolling window size.
+    :return: Rolling covariances between dataframes df1 and df, meaning that
+             df1 and df2 should be identical in their shapes.
+    """
+
+    try:
+        assert df1.shape == df2.shape
+    except:
+        msg = f"""
+        Input dataframes should be identical in their shapes. \n
+        Received shapes: {df1.shape} and {df2.shape}
+        """
+        raise AssertionError(msg)
+
+    return df1.rolling(window=window).cov(df2)
+
+
+def scale(df, alpha=1):
+    """
+    :param df: Input dataframe.
+    :param alpha: Scaling factor, default to 1.
+    :return: Rescaled dataframe such that sum(abs(df)) = alpha.
+    """
+
+    return alpha / np.abs(df).sum() * df
+
+
 
 
 
