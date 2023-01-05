@@ -84,3 +84,26 @@ class Invoker(Factor, Strategy, Alpha101):
                 print("All candle graphs have been displayed.")
 
 
+    def nrate(self, n, method="simple"):
+        """
+        :param n: int, the period size.
+        :param method: Default to "simple", alternative to "compound".
+        :return: pd.DataFrame, rolled n-period rate of returns.
+        """
+
+        if method == "simple":
+            assert self.rate is not None
+            return self.rate.rolling(n).sum()
+
+        elif method == "compound":
+            assert self.close is not None
+            return self.close.diff(n) / self.close.shift(n)
+
+        else:
+            raise NameError("Method should take value as 'simple' or 'compound'.")
+
+
+
+
+
+

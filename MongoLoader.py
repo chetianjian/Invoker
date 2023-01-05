@@ -11,8 +11,8 @@ class Mongo(object):
 
         self.available_dname = [
             "stock_list", "index_list", "etf_list",
-            "open", "close", "high", "low", "volume", "money", "rate", "vwap",
-            "adj", "mv", "turnover", "circ_mv", "circ_turnvoer", "xdxr",
+            "open", "close", "high", "low", "volume", "money", "rate", "lograte",
+            "vwap", "adj", "mv", "turnover", "circ_mv", "circ_turnvoer", "xdxr",
             "index_open", "index_close", "index_high", "index_low", "index_volume",
             "index_money", "index_rate", "index_vwap",
             "reports", "stock_block", "stock_basic", "daily_basic", "stock_info",
@@ -130,7 +130,16 @@ class Mongo(object):
 
     @property
     def adj(self) -> pd.DataFrame:
+        if self.data["adj"] is None:
+            self.load_adj_day()
         return self.data["adj"]
+
+
+    @property
+    def lograte(self):
+        if self.data["lograte"] is None:
+            self.data["lograte"] = np.log(self.rate + 1)
+        return self.data["lograte"]
 
 
     @property

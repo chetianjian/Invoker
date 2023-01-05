@@ -47,7 +47,6 @@ class Alpha101(Mongo):
         return -1 * ts_rank(self.low.rank(pct=True), 9)
 
 
-
     def alpha_005(self):
         """
         :return: (rank((open - (sum(vwap, 10) / 10))) * (-1 * abs(rank((close - vwap)))))
@@ -82,6 +81,17 @@ class Alpha101(Mongo):
         return -1 * (sumprod - sumprod.shift(10)).rank(pct=True)
 
 
+    def alpha_014(self):
+        """
+        :return: ((-1 * rank(delta(returns, 3))) * correlation(open, volume, 10))
+        """
+
+
+
+
+
+
+
     def alpha_022(self):
         """
         :return: (-1 *(delta(correlation(high, volume, 5), 5) * rank(stddev(close, 20)))
@@ -89,6 +99,10 @@ class Alpha101(Mongo):
 
         return -1 * self.high.corrwith(self.volume.shift(5)).diff(5) * \
             stddev(self.close, 20).rank(pct=True)
+
+
+
+
 
 
     def alpha_041(self):
@@ -99,6 +113,11 @@ class Alpha101(Mongo):
         return np.power((self.high * self.low), 0.5) - self.vwap
 
 
+
+
+
+
+
     def alpha_042(self):
         """
         :return: (rank((vwap - close)) / rank((vwap + close)))
@@ -107,12 +126,20 @@ class Alpha101(Mongo):
         return (self.vwap - self.close).rank(pct=True) / (self.vwap + self.close).rank(pct=True)
 
 
+
+
+
+
     def alpha_044(self):
         """
         :return: (-1 * correlation(high, rank(volume), 5))
         """
 
         return -1 * self.high.corrwith(self.volume.rank(pct=True).shift(5))
+
+
+
+
 
 
     def alpha_053(self):
@@ -124,6 +151,10 @@ class Alpha101(Mongo):
                      (self.close - self.low)).diff(9)
 
 
+
+
+
+
     def alpha_054(self):
         """
         :return: ((-1 * ((low - close) * (open^5))) / ((low - high) * (close^5)))
@@ -131,6 +162,10 @@ class Alpha101(Mongo):
 
         return -1 * ((self.low - self.close) * np.power(self.open, 5)) / \
             ((self.low - self.high) * np.power(self.close, 5))
+
+
+
+
 
 
     def alpha_101(self):
