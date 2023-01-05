@@ -52,6 +52,7 @@ def covwith(df1: pd.DataFrame, df2: pd.DataFrame, window=1) -> pd.Series:
     return df1.std() * df2.std() * df1.corrwith(df2)
 
 
+
 def seriesPosNegSumRatio(series):
     """
     :param series: 一列数据
