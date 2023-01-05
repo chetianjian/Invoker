@@ -12,10 +12,11 @@ def rolling_rank(arr):
     :param arr: Numpy array.
     :return: The rank of the last value in the array.
     """
+
     return rankdata(arr)[-1]
 
 
-def stddev(df, window):
+def stddev(df, window=1):
     """
     Rolling standard deviation.
     :param df: Target DataFrame.
@@ -23,16 +24,32 @@ def stddev(df, window):
     :return: DataFrame consists of standard deviations over the
              past-window-days for each line of the original input.
     """
+
     return df.rolling(window).std()
 
 
-def ts_rank(df, window=10):
+def ts_rank(df, window=1):
     """
     :param df: Target DataFrame.
-    :param window: Rolling window size.
+    :param window: Default to 1. Rolling window size.
     :return: a pandas DataFrame with the time-series rank over the past window days.
     """
+
     return df.rolling(window).apply(rolling_rank)
+
+
+def covwith(df1: pd.DataFrame, df2: pd.DataFrame, window=1) -> pd.Series:
+    """
+    :param df1: First dataframe.
+    :param df2: Second dataframe.
+    :param window: Default to 1. Rolling window size applied to df2.
+    :return: A pandas.Series instance with column-wise covariances between
+             df1 and df2, meaning that df1 and df2 should be identical in
+             their shapes.
+    """
+
+    df2 = df2.shift(periods=window)
+    return df1.std() * df2.std() * df1.corrwith(df2)
 
 
 def seriesPosNegSumRatio(series):
@@ -51,6 +68,7 @@ def arrAvgAbs(arr, fillna=False):
     :param arr: 一列数据
     :return: 计算数组的平均绝对偏差。偏差表示每个数值与平均值之间的差，平均偏差表示每个偏差绝对值的平均值。
     """
+
     result = np.nanmean(abs(arr - np.nanmean(arr)))
     return result if not fillna else fillna
 
@@ -61,6 +79,7 @@ def rowWeighted(arr, fillna=False):
     :param arr: 一列数据
     :return: 各自按自身占总体的比例加权
     """
+
     result = arr / np.nansum(arr)
     return result if not fillna else result.fillna(fillna)
 
@@ -71,6 +90,7 @@ def arrNormalize(arr, fillna=False):
     :param arr: 一列数据
     :return: 令行向量模长 = 1，即 L^2 范数为 1。
     """
+
     result = arr / np.nansum(arr ** 2)
     return result if not fillna else result.fillna(fillna)
 
@@ -81,6 +101,7 @@ def arrStandardize(arr, fillna=False):
     :param arr: 一列数据
     :return: (arr - mean(arr)) / std(arr)
     """
+
     result = (arr - arr.mean()) / arr.std()
     return result if not fillna else result.fillna(fillna)
 
@@ -91,6 +112,7 @@ def seriesStandardize(series, fillna=False):
     :param series: 一列数据
     :return: (series - mean(series)) / std(series)
     """
+
     if type(series) == pd.DataFrame:
         series = series.iloc[:, 0]
     result = (series - np.nanmean(series)) / np.nanstd(series)
@@ -104,6 +126,7 @@ def mvNeutralize(df: pd.DataFrame, mv: pd.DataFrame, fillna=False) -> pd.DataFra
     :param fillna: If fill NaNs, default for False, otherwise input a value.
     :return: Factor DataFrame neutralized cross-sectionally by Market Value.
     """
+
     assert df.shape == mv.shape
     data, mv = df.fillna(0), mv.fillna(0)
     for row in range(len(data)):

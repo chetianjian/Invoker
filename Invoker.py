@@ -6,7 +6,6 @@ from Alpha101 import Alpha101
 from utils import *
 
 
-# noinspection PyBroadException
 class Invoker(Factor, Strategy, Alpha101):
     def __init__(self):
         # print("I am a beacon of knowledge blazing out across a black sea of ignorance.")
@@ -77,11 +76,13 @@ class Invoker(Factor, Strategy, Alpha101):
         :return: yield one candle graph each time you call the function.
         """
         for code in code_list:
+            # noinspection PyBroadException
             try:
                 print(f"{code}: {self.data['stock_list'].loc[code, 'name']}")
                 yield draw_candle(self.code2df(code).iloc[-n:, :])
             except:
                 print("All candle graphs have been displayed.")
+
 
 
     def nrate(self, n, method="simple"):
@@ -101,9 +102,5 @@ class Invoker(Factor, Strategy, Alpha101):
 
         else:
             raise NameError("Method should take value as 'simple' or 'compound'.")
-
-
-
-
 
 

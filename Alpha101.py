@@ -44,7 +44,7 @@ class Alpha101(Mongo):
         :return: (-1 * Ts_Rank(rank(low), 9))
         """
 
-        return -1 * ts_rank(self.low.rank(pct=True), 9)
+        return -1 * ts_rank(self.low.rank(pct=True), window=9)
 
 
     def alpha_005(self):
@@ -81,10 +81,43 @@ class Alpha101(Mongo):
         return -1 * (sumprod - sumprod.shift(10)).rank(pct=True)
 
 
+
+
+
+
     def alpha_014(self):
         """
         :return: ((-1 * rank(delta(returns, 3))) * correlation(open, volume, 10))
         """
+
+        return -1 * self.rate.diff(3).rank(pct=True) * self.open.corrwith(self.volume.shift(10))
+
+
+    def alpha_015(self):
+        """
+        :return: (-1 * sum(rank(correlation(rank(high), rank(volume), 3)), 3))
+        """
+
+        prod = self.high.rank(pct=True).corrwith(self.volume.rank(pct=True).shift(3))
+        return -1 * prod.rolling(window=3).sum()
+
+
+    def alpha_016(self):
+        """
+        :return: (-1 * rank(covariance(rank(high), rank(volume), 5)))
+        """
+
+        return covwith(df1=self.high.rank(pct=True),
+                       df2=self.volume.rank(pct=True),
+                       window=5)
+
+
+    def alpha_017(self):
+        """
+        :return:
+        """
+
+
 
 
 
