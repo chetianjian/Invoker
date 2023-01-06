@@ -144,6 +144,8 @@ class Mongo(object):
 
     @property
     def mv(self) -> pd.DataFrame:
+        if self.data["mv"] is None:
+            self.load_total_mv()
         return self.data["mv"]
 
 

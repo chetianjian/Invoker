@@ -16,6 +16,7 @@ class Alpha101(Mongo):
         tmp1 = self.volume.diff(periods=1).rank(axis=1, pct=True)
         tmp2 = ((self.close - self.open) / self.open).rank(axis=1, pct=True)
         tmp3 = -tmp1.iloc[-6:, :].corrwith(tmp2.iloc[-6:, :]).dropna()
+
         return tmp3.dropna()
 
 
@@ -24,8 +25,10 @@ class Alpha101(Mongo):
         """
         :return: (-1 * correlation(rank(delta(log(volume), 2)), rank(((close - open) / open)), 6))
         """
+
         tmp1 = np.log(self.volume).diff(2).rank(pct=True)
         tmp2 = (((self.close - self.open) / self.open).rank(pct=True))
+
         return -1 * corr(tmp1, tmp2, 6)
 
 
@@ -86,6 +89,7 @@ class Alpha101(Mongo):
         """
 
         tmp = self.open.rolling(5).sum() * self.rate.rolling(5).sum()
+
         return -1 * (tmp - tmp.shift(10)).rank(pct=True)
 
 
@@ -114,6 +118,7 @@ class Alpha101(Mongo):
 
         tmp1 = np.sign(self.volume.diff(1))
         tmp2 = -1 * self.close.diff(1)
+
         return tmp1 * tmp2
 
 
@@ -126,6 +131,7 @@ class Alpha101(Mongo):
         tmp1 = self.close.rank(pct=True)
         tmp2 = self.volume.rank(pct=True)
         tmp = covar(df1=tmp1, df2=tmp2, window=5)
+
         return -1 * tmp.rank(pct=True)
 
 
@@ -150,6 +156,7 @@ class Alpha101(Mongo):
         tmp1 = self.high.rank(pct=True)
         tmp2 = self.volume.rank(pct=True)
         tmp = corr(tmp1, tmp2, 3)
+
         return -1 * tmp.rolling(window=3).sum()
 
 
@@ -162,6 +169,7 @@ class Alpha101(Mongo):
         tmp = covar(df1=self.high.rank(pct=True),
                              df2=self.volume.rank(pct=True),
                              window=5)
+
         return -1 * tmp.rank(pct=True)
 
 
@@ -218,6 +226,11 @@ class Alpha101(Mongo):
         return -1 * tmp1 * tmp2 * tmp3
 
 
+
+
+
+
+
     @property
     def alpha_022(self):
         """
@@ -230,6 +243,11 @@ class Alpha101(Mongo):
         return -1 * tmp1 * tmp2
 
 
+
+
+
+
+
     @property
     def alpha_025(self):
         """
@@ -238,7 +256,13 @@ class Alpha101(Mongo):
 
         adv20 = self.volume.rolling(20).mean()
         tmp = -1 * self.rate * adv20 * self.vwap * (self.high - self.close)
+
         return tmp.rank(pct=True)
+
+
+
+
+
 
 
     @property
@@ -254,6 +278,11 @@ class Alpha101(Mongo):
         return scale(tmp1 + tmp2 - self.close)
 
 
+
+
+
+
+
     @property
     def alpha_032(self):
         """
@@ -264,6 +293,11 @@ class Alpha101(Mongo):
         tmp2 = 20 * scale(corr(self.vwap, self.close.shift(5), 230))
 
         return tmp1 + tmp2
+
+
+
+
+
 
 
     @property
@@ -309,6 +343,9 @@ class Alpha101(Mongo):
 
 
 
+
+
+
     @property
     def alpha_040(self):
         """
@@ -319,8 +356,6 @@ class Alpha101(Mongo):
         tmp2 = corr(self.high, self.volume, 10)
 
         return -1 * tmp1 * tmp2
-
-
 
 
     @property
@@ -367,6 +402,10 @@ class Alpha101(Mongo):
         return -1 * corr(self.high, self.volume.rank(pct=True), 5)
 
 
+
+
+
+
     @property
     def alpha_045(self):
         """
@@ -380,6 +419,9 @@ class Alpha101(Mongo):
         tmp3 = corr(self.close.rolling(5).sum(), self.close.rolling(20).sum(), 2).rank(pct=True)
 
         return -1 * tmp1 * tmp2 * tmp3
+
+
+
 
 
     @property
@@ -399,6 +441,10 @@ class Alpha101(Mongo):
         return tmp1 * tmp2 / tmp3 - tmp4
 
 
+
+
+
+
     @property
     def alpha_050(self):
         """
@@ -406,6 +452,9 @@ class Alpha101(Mongo):
         """
 
         return -1 * ts_max(corr(self.volume.rank(pct=True), self.vwap.rank(pct=True), 5), 5)
+
+
+
 
 
     @property
@@ -447,7 +496,38 @@ class Alpha101(Mongo):
 
         tmp1 = (self.low - self.close) * np.power(self.open, 5)
         tmp2 = (self.low - self.high) * np.power(self.close, 5)
+
         return -1 * tmp1 / tmp2
+
+
+
+    @property
+    def alpha_056(self):
+        """
+        :return: (0 - (1 * (rank((sum(returns, 10) / sum(sum(returns, 2), 3))) *
+                 rank((returns * cap)))))
+        """
+
+        tmp1 = self.rate.rolling(10).sum()
+        tmp2 = self.rate.rolling(2).sum().rolling(3).sum()
+        tmp3 = (self.rate * self.mv).rank(pct=True)
+
+        return -1 * (tmp1 / tmp2).rank(pct=True) * tmp3
+
+
+    @property
+    def alpha_057(self):
+        """
+        :return: (0 - (1 * ((close - vwap) / decay_linear(rank(ts_argmax(close, 30)), 2))))
+        """
+        tmp1 = self.close - self.vwap
+
+        # TO DO:
+        return None
+
+
+
+
 
     @property
     def alpha_061(self):
@@ -458,7 +538,30 @@ class Alpha101(Mongo):
         adv180 = self.volume.rolling(window=180).mean()
         tmp1 = self.vwap - ts_min(self.vwap, 16).rank(pct=True)
         tmp2 = corr(self.vwap, adv180, 18).rank(pct=True)
+
         return (tmp1 < tmp2) * 1
+
+
+
+
+
+    @property
+    def alpha_075(self):
+        """
+        :return: (rank(correlation(vwap,volume,4.24304)) <
+                 rank(correlation(rank(low),rank(adv50),12.4413)))
+        """
+
+        adv50 = self.volume.rolling(window=50).mean()
+        tmp1 = corr(self.vwap, self.volume, 4).rank(pct=True)
+        tmp2 = corr(self.low.rank(pct=True), adv50.rank(pct=True), 12)
+
+        return (tmp1 < tmp2) * 1
+
+
+
+
+
 
 
 

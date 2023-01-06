@@ -44,6 +44,7 @@ def ts_min(df, window) -> pd.DataFrame:
     :param window: The rolling window size.
     :return: Time-series minimum over the past 'window' days.
     """
+
     return df.rolling(window=window).min()
 
 
@@ -53,7 +54,18 @@ def ts_max(df, window) -> pd.DataFrame:
     :param window: The rolling window size.
     :return: Time-series maximum over the past 'window' days.
     """
+
     return df.rolling(window=window).max()
+
+
+def ts_argmax(df, window):
+    """
+    :param df: Input dataframe.
+    :param window: The rolling window size.
+    :return:
+    """
+
+    return df.rolling(window=window).apply(np.argmax) + 1
 
 
 def corr(df1, df2, window) -> pd.DataFrame:
