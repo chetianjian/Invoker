@@ -318,6 +318,22 @@ class Alpha101(Mongo):
         return self.alpha101["025"]
 
 
+    @property
+    def alpha_026(self):
+        """
+        :return: (-1 * ts_max(correlation(ts_rank(volume, 5), ts_rank(high, 5), 5), 3))
+        """
+
+        if self.alpha101["026"] is None:
+            tmp1 = ts_rank(self.volume, 5)
+            tmp2 = ts_rank(self.high, 5)
+            tmp = corr(tmp1, tmp2, 5)
+
+            self.alpha101["026"] = -1 * ts_max(tmp, 3)
+
+        return self.alpha101["026"]
+
+
 
 
 
@@ -359,9 +375,19 @@ class Alpha101(Mongo):
         return self.alpha101["032"]
 
 
+    @property
+    def alpha_033(self):
+        """
+        :return: rank((-1 * ((1 - (open / close))^1)))
+        """
 
+        if self.alpha101["033"] is None:
 
+            tmp = 1 - self.open / self.close
 
+            self.alpha101["033"] = -1 * tmp.rank(pct=True)
+
+        return self.alpha101["033"]
 
 
     @property
@@ -395,9 +421,43 @@ class Alpha101(Mongo):
         return self.alpha101["035"]
 
 
+    @property
+    def alpha_036(self):
+        """
+        :return:  (((((2.21 * rank(correlation((close - open), delay(volume, 1), 15))) +
+                  (0.7 * rank((open - close)))) +
+                  (0.73 * rank(Ts_Rank(delay((-1 * returns), 6), 5)))) +
+                  rank(abs(correlation(vwap, adv20, 6)))) +
+                  (0.6 * rank((((sum(close, 200) / 200) - open) * (close - open)))))
+        """
+
+        if self.alpha101["036"] is None:
+            adv20 = self.volume.rolling(20).mean()
+            tmp1 = 2.21 * corr((self.close - self.open), self.volume.shift(1), 15).rank(pct=True)
+            tmp2 = 0.7 * (self.open - self.close).rank(pct=True)
+            tmp3 = 0.73 * ts_rank((-1 * self.rate).shift(6), 5).rank(pct=True)
+            tmp4 = corr(self.vwap, adv20, 6)
+            tmp5 = 0.6 * ((self.close.rolling(200).sum() - self.open) *
+                          (self.close-self.open)).rank(pct=True)
+
+            self.alpha101["036"] = tmp1 + tmp2 + tmp3 + tmp4 + tmp5
+
+        return self.alpha101["036"]
 
 
+    @property
+    def alpha_037(self):
+        """
+        :return:  (rank(correlation(delay((open - close), 1), close, 200)) + rank((open - close)))
+        """
 
+        if self.alpha101["037"] is None:
+            tmp1 = corr((self.open - self.close).shift(1), self.close, 200).rank(pct=True)
+            tmp2 = (self.open - self.close).rank(pct=True)
+
+            self.alpha101["037"] = tmp1 + tmp2
+
+        return self.alpha101["037"]
 
 
     @property
@@ -491,10 +551,6 @@ class Alpha101(Mongo):
         return self.alpha101["044"]
 
 
-
-
-
-
     @property
     def alpha_045(self):
         """
@@ -511,6 +567,10 @@ class Alpha101(Mongo):
             self.alpha101["045"] = -1 * tmp1 * tmp2 * tmp3
 
         return self.alpha101["045"]
+
+
+
+
 
 
     @property
@@ -588,11 +648,6 @@ class Alpha101(Mongo):
         return self.alpha101["053"]
 
 
-
-
-
-
-
     @property
     def alpha_054(self):
         """
@@ -607,6 +662,24 @@ class Alpha101(Mongo):
 
         return self.alpha101["054"]
 
+
+    @property
+    def alpha_055(self):
+        """
+        :return: (-1 * correlation(
+                       rank(((close - ts_min(low, 12)) / (ts_max(high, 12) - ts_min(low, 12)))),
+                       rank(volume),
+                       6))
+        """
+
+        if self.alpha101["055"] is None:
+            tmp1 = self.close - ts_min(self.low, 12)
+            tmp2 = ts_max(self.high, 12) - ts_min(self.low, 12)
+            tmp3 = self.volume.rank(pct=True)
+
+            self.alpha101["055"] = -1 * corr((tmp1 / tmp2).rank(pct=True), tmp3, 6)
+
+        return self.alpha101["055"]
 
 
     @property
@@ -650,12 +723,113 @@ class Alpha101(Mongo):
             tmp1 = self.vwap - ts_min(self.vwap, 16).rank(pct=True)
             tmp2 = corr(self.vwap, adv180, 18).rank(pct=True)
 
-            self.alpha101["061"] = (tmp1 < tmp2) * 1
+            self.alpha101["061"] = (tmp1 < tmp2).astype(int)
 
         return self.alpha101["061"]
 
 
+    @property
+    def alpha_062(self):
+        """
+        :return: ((rank(correlation(vwap, sum(adv20, 22.4101), 9.91009)) <
+                  rank(((rank(open) + rank(open)) < (rank(((high + low) / 2)) + rank(high))))) * -1)
+        """
 
+        if self.alpha101["062"] is None:
+            adv20 = self.volume.rolling(window=20).mean()
+            tmp1 = corr(self.vwap, adv20.rolling(window=22).sum(), 10)
+            tmp2 = 2 * self.open.rank(pct=True)
+            tmp3 = ((self.high + self.low) / 2).rank(pct=True) + self.high.rank(pct=True)
+            tmp4 = (tmp2 < tmp3).astype(int)
+            tmp5 = -1 * tmp4.rank(pct=True)
+
+            self.alpha101["062"] = (tmp1 < tmp5).astype(int)
+
+        return self.alpha101["062"]
+
+
+
+    @property
+    def alpha_064(self):
+        """
+        :return: ((rank(correlation(sum(((open * 0.178404) + (low * (1 - 0.178404))), 12.7054),
+                    sum(adv120, 12.7054), 16.6208)) < rank(delta(((((high + low) / 2) * 0.178404) +
+                    (vwap * (1 - 0.178404))), 3.69741))) * -1)
+        """
+
+        if self.alpha101["064"] is None:
+            adv120 = self.volume.rolling(window=120).mean()
+            tmp1 = (0.178404 * self.open + 0.821596 * self.low).rolling(window=13).sum()
+            tmp2 = adv120.rolling(window=13).sum()
+            tmp3 = corr(tmp1, tmp2, 17).rank(pct=True)
+            tmp4 = 0.178404 * ((self.high + self.low) / 2) + 0.821596 * self.vwap
+            tmp5 = tmp4.diff(4).rank(pct=True)
+
+            self.alpha101["064"] = -1 * (tmp3 < tmp5)
+
+        return self.alpha101["064"]
+
+
+    @property
+    def alpha_065(self):
+        """
+        :return: ((rank(correlation(((open * 0.00817205) + (vwap * (1 - 0.00817205))),
+                                    sum(adv60, 8.6911),
+                                    6.40374)) <
+                        rank((open - ts_min(open, 13.635)))) * -1)
+        """
+
+        if self.alpha101["065"] is None:
+            adv60 = self.volume.rolling(window=60).mean()
+            tmp1 = 0.00817205 * self.open + 0.99182795 * self.vwap
+            tmp2 = corr(tmp1, adv60.rolling(window=9).sum(), 6).rank(pct=True)
+            tmp3 = self.open - ts_min(self.open, 14).rank(pct=True)
+
+            self.alpha101["065"] = -1 * (tmp2 < tmp3)
+
+        return self.alpha101["065"]
+
+
+    @property
+    def alpha_068(self):
+        """
+        :return: ((Ts_Rank(correlation(rank(high), rank(adv15), 8.91644), 13.9333) <
+                   rank(delta(((close * 0.518371) + (low * (1 - 0.518371))), 1.06157))) * -1)
+        """
+
+        if self.alpha101["068"] is None:
+            adv15 = self.volume.rolling(window=15).mean()
+            tmp1 = ts_rank(corr(self.high.rank(pct=True), adv15.rank(pct=True), 9), 14)
+            tmp2 = 0.518371 * self.close + 0.481629 * self.low
+            tmp3 = tmp2.diff(1).rank(pct=True)
+
+            self.alpha101["068"] = -1 * (tmp1 < tmp3)
+
+        return self.alpha101["068"]
+
+
+
+
+
+
+
+    @property
+    def alpha_074(self):
+        """
+        :return: ((rank(correlation(close, sum(adv30, 37.4843), 15.1365)) <
+                   rank(correlation(rank(((high * 0.0261661) + (vwap * (1 - 0.0261661)))),
+                                         rank(volume), 11.4791))) * -1)
+        """
+
+        if self.alpha101["074"] is None:
+            adv30 = self.volume.rolling(window=30).mean()
+            tmp1 = corr(self.close, adv30.rolling(window=37).sum(), 15).rank(pct=True)
+            tmp2 = (0.0261661 * self.high + 0.9738339 * self.vwap).rank(pct=True)
+            tmp3 = corr(tmp2, self.volume.rank(pct=True), 11).rank(pct=True)
+
+            self.alpha101["074"] = (tmp1 < tmp3).astype(int)
+
+        return self.alpha101["074"]
 
 
     @property
@@ -670,11 +844,168 @@ class Alpha101(Mongo):
             tmp1 = corr(self.vwap, self.volume, 4).rank(pct=True)
             tmp2 = corr(self.low.rank(pct=True), adv50.rank(pct=True), 12)
 
-            self.alpha101["075"] = (tmp1 < tmp2) * 1
+            self.alpha101["075"] = (tmp1 < tmp2).astype(int)
 
         return self.alpha101["075"]
 
 
+
+    @property
+    def alpha_078(self):
+        """
+        :return: (rank(correlation(sum(((low * 0.352233) + (vwap * (1 - 0.352233))), 19.7428),
+                                   sum(adv40, 19.7428), 6.83313))^
+                                rank(correlation(rank(vwap), rank(volume), 5.77492)))
+        """
+
+        if self.alpha101["078"] is None:
+            adv40 = self.volume.rolling(window=40).mean()
+            tmp1 = (0.352233 * self.low + 0.647767 * self.vwap).rolling(window=20).sum()
+            tmp2 = adv40.rolling(window=20).sum()
+            tmp3 = corr(tmp1, tmp2, 7).rank(pct=True)
+            tmp4 = corr(self.vwap.rank(pct=True), self.volume.rank(pct=True), 6).rank(pct=True)
+
+            self.alpha101["078"] = np.power(tmp3, tmp4)
+
+        return self.alpha101["078"]
+
+
+    @property
+    def alpha_081(self):
+        """
+        :return:  ((rank(Log(product(rank((rank(correlation(vwap, sum(adv10, 49.6054), 8.47743))^4)), 14.9655))) <
+                    rank(correlation(rank(vwap), rank(volume), 5.07914))) * -1)
+        """
+
+        if self.alpha101["081"] is None:
+            adv10 = self.volume.rolling(window=10).mean()
+            tmp1 = np.power(corr(self.vwap, adv10.rolling(window=50).sum(), 8).rank(pct=True), 4)
+            tmp2 = np.log(tmp1.rank(pct=True).rolling(window=15).prod()).rank(pct=True)
+            tmp3 = corr(self.vwap.rank(pct=True), self.volume.rank(pct=True), 5).rank(pct=True)
+
+            self.alpha101["081"] = -1 * (tmp2 < tmp3)
+
+        return self.alpha101["081"]
+            
+
+
+
+    @property
+    def alpha_083(self):
+        """
+        :return: ((rank(delay(((high - low) / (sum(close, 5) / 5)), 2)) * rank(rank(volume))) /
+                  (((high - low) /
+                  (sum(close, 5) / 5))
+                  / (vwap - close)))
+        """
+
+        if self.alpha101["083"] is None:
+            tmp1 = self.high - self.low
+            tmp2 = self.close.rolling(window=5).sum() / 5
+            tmp3 = (tmp1 / tmp2).shift(2).rank(pct=True)
+            tmp4 = (self.volume.rank(pct=True)).rank(pct=True)
+            tmp5 = self.close.rolling(window=5).sum() / 5
+            tmp6 = tmp1 / tmp5
+            tmp7 = tmp6 / (self.vwap - self.close)
+
+            self.alpha101["083"] = tmp3 * tmp4 / tmp7
+
+        return self.alpha101["083"]
+
+
+
+
+
+    @property
+    def alpha_085(self):
+        """
+        :return: (rank(correlation(((high * 0.876703) + (close * (1 - 0.876703))), adv30, 9.61331))^
+                rank(correlation(Ts_Rank(((high + low) / 2), 3.70596), Ts_Rank(volume, 10.1595), 7.11408)))
+        """
+
+        if self.alpha101["085"] is None:
+            adv30 = self.volume.rolling(window=30).mean()
+            tmp1 = corr(0.876703 * self.high + 0.123297 * self.close, adv30, 10).rank(pct=True)
+            tmp2 = ts_rank((self.high + self.low) / 2, 4)
+            tmp3 = ts_rank(self.volume, 10)
+            tmp4 = corr(tmp2, tmp3, 7).rank(pct=True)
+
+            self.alpha101["085"] = np.power(tmp1, tmp4)
+
+        return self.alpha101["085"]
+
+
+    @property
+    def alpha_086(self):
+        """
+        :return: ((Ts_Rank(correlation(close, sum(adv20, 14.7444), 6.00049), 20.4195) <
+                 rank(((open + close) - (vwap + open)))) * -1)
+        """
+
+        if self.alpha101["086"] is None:
+            adv20 = self.volume.rolling(window=20).mean()
+            tmp1 = ts_rank(corr(self.close, adv20.rolling(15).sum(), 6), 20)
+            tmp2 = -1 * ((self.open + self.close) - (self.vwap + self.open)).rank(pct=True)
+
+            self.alpha101["086"] = (tmp1 < tmp2).astype(int)
+
+        return self.alpha101["086"]
+
+
+    @property
+    def alpha_094(self):
+        """
+        :return: ((rank((vwap - ts_min(vwap, 11.5783)))^Ts_Rank(correlation(Ts_Rank(vwap,
+                 19.6462), Ts_Rank(adv60, 4.02992), 18.0926), 2.70756)) * -1)
+        """
+
+        if self.alpha101["094"] is None:
+            adv60 = self.volume.rolling(window=60).mean()
+            tmp1 = (self.vwap - ts_min(self.vwap, 12)).rank(pct=True)
+            tmp2 = ts_rank(corr(ts_rank(self.vwap, 20), ts_rank(adv60, 4), 18), 3)
+
+            self.alpha101["094"] = -1 * np.power(tmp1, tmp2)
+
+        return self.alpha101["094"]
+
+
+    @property
+    def alpha_095(self):
+        """
+        :return:  (rank((open - ts_min(open, 12.4105))) <
+                   Ts_Rank((rank(correlation(sum(((high + low) / 2), 19.1351),
+                                             sum(adv40, 19.1351),
+                                             12.8742))^5), 11.7584))
+        """
+
+        if self.alpha101["095"] is None:
+            adv40 = self.volume.rolling(window=40).mean()
+            tmp1 = (self.open - ts_min(self.open, 12)).rank(pct=True)
+            tmp2 = ((self.high + self.low) / 2).rolling(window=19).sum()
+            tmp3 = ts_rank(np.power(corr(tmp2, adv40.rolling(window=19).sum(), 13).rank(pct=True), 5), 12)
+
+            self.alpha101["095"] = (tmp1 < tmp3).astype(int)
+
+        return self.alpha101["095"]
+
+
+    @property
+    def alpha_099(self):
+        """
+        :return: ((rank(correlation(sum(((high + low) / 2), 19.8975), sum(adv60, 19.8975), 8.8136)) <
+                  (rank(correlation(low, volume, 6.28259))) * -1)
+        """
+
+        if self.alpha101["099"] is None:
+            adv60 = self.volume.rolling(window=60).mean()
+            tmp1 = ((self.high + self.low) / 2).rolling(window=20).sum()
+            tmp2 = adv60.rolling(window=20).sum()
+            tmp3 = corr(tmp1, tmp2, 9).rank(pct=True)
+            tmp4 = -1 * corr(self.low, self.volume, 6).rank(pct=True)
+
+            self.alpha101["099"] = (tmp3 < tmp4).astype(int)
+
+        return self.alpha101["099"]
 
 
 
@@ -691,5 +1022,3 @@ class Alpha101(Mongo):
             self.alpha101["101"] = (self.close - self.open).div(self.high - self.low + 0.001)
 
         return self.alpha101["101"]
-
-

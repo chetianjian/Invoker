@@ -1002,15 +1002,20 @@ class Factor(Mongo):
         """
 
         if usedPrice == "close":
-            assert self.close is not None
+            try:
+                assert self.close is not None
+            except:
+                raise AssertionError("close data should be loaded in advance.")
             price = self.close.shift(1)
         else:
-            assert self.vwap is not None
+            try:
+                assert self.vwap is not None
+            except:
+                raise AssertionError("vwap data should be loaded in advance.")
             price = self.vwap.shift(1)
 
         assert self.high is not None
         assert self.low is not None
-
 
         TR = np.maximum(self.high - self.low,
                         np.absolute(self.high - price),
