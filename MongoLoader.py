@@ -119,11 +119,6 @@ class Mongo(object):
 
 
     @property
-    def turnover(self) -> pd.DataFrame:
-        return self.data["turnover"]
-
-
-    @property
     def money(self) -> pd.DataFrame:
         return self.data["money"]
 
@@ -136,7 +131,7 @@ class Mongo(object):
 
 
     @property
-    def lograte(self):
+    def lograte(self) -> pd.DataFrame:
         if self.data["lograte"] is None:
             self.data["lograte"] = np.log(self.rate + 1)
         return self.data["lograte"]
@@ -147,6 +142,19 @@ class Mongo(object):
         if self.data["mv"] is None:
             self.load_total_mv()
         return self.data["mv"]
+
+
+    def circ_mv(self) -> pd.DataFrame:
+        if self.data["circ_mv"] is None:
+            self.load_circ_mv()
+        return self.data["circ_mv"]
+
+
+    @property
+    def turnover(self) -> pd.DataFrame:
+        if self.data["turnover"] is None:
+            self.load_turnover()
+        return self.data["turnover"]
 
 
     @property
@@ -231,6 +239,7 @@ class Mongo(object):
 
     @property
     def hs300(self):
+        # 沪深 300
         if self.data["hs300"] is None:
             self.data["hs300"] = self.single_index_day(code="000300")
         return self.data["hs300"]
@@ -238,6 +247,7 @@ class Mongo(object):
 
     @property
     def zz500(self):
+        # 中证 500
         if self.data["zz500"] is None:
             self.data["zz500"] = self.single_index_day(code="000905")
         return self.data["zz500"]
@@ -245,6 +255,7 @@ class Mongo(object):
 
     @property
     def sh50(self):
+        # 上证 50
         if self.data["sh50"] is None:
             self.data["sh50"] = self.single_index_day(code="000016")
         return self.data["sh50"]
@@ -291,7 +302,7 @@ class Mongo(object):
 
 
     @property
-    def cached(self) -> list:
+    def cache(self) -> list:
         return [dname for dname in self.available_dname if self.data[dname] is not None]
 
 
@@ -408,17 +419,11 @@ class Mongo(object):
         :return: Load total market capitalization into self.data dictionary.
         """
 
-        if self.data["stock_list"] is None:
-            self.load_stock_list()
-
-        df = pd.DataFrame(index=self.calendar)
-        for code in self.data["stock_list"]:
-            tmp = pd.DataFrame(
-                self.db["daily_basic"].find({"code": code})
-            )[["trade_date", "total_mv"]]
-            tmp.rename(columns={"trade_date": "date"}, inplace=True)
-            tmp["date"] = list(map(lambda d: d[0:4] + "-" + d[4:6] + "-" + d[6:], tmp["date"]))
-            df[code] = tmp.set_index("date")
+        df = pd.DataFrame(self.db["daily_basic"].find(
+            {}, {"_id": 0, "code": 1, "trade_date": 1, "total_mv": 1}))
+        df = df.set_index(["trade_date", "code"]).unstack().droplevel(0, axis=1)
+        df.index = map(lambda d: d[0:4] + "-" + d[4:6] + "-" + d[6:], df.index)
+        df.index.name = "date"
 
         self.data["mv"] = df
 
@@ -431,17 +436,11 @@ class Mongo(object):
         :return: Load information of circulating market capitalization into self.data dictionary.
         """
 
-        if self.data["stock_list"] is None:
-            self.load_stock_list()
-
-        df = pd.DataFrame(index=self.calendar)
-        for code in self.data["stock_list"]:
-            tmp = pd.DataFrame(
-                self.db["daily_basic"].find({"code": code})
-            )[["trade_date", "circ_mv"]]
-            tmp.rename(columns={"trade_date": "date"}, inplace=True)
-            tmp["date"] = list(map(lambda d: d[0:4] + "-" + d[4:6] + "-" + d[6:], tmp["date"]))
-            df[code] = tmp.set_index("date")
+        df = pd.DataFrame(self.db["daily_basic"].find(
+            {}, {"_id": 0, "code": 1, "trade_date": 1, "circ_mv": 1}))
+        df = df.set_index(["trade_date", "code"]).unstack().droplevel(0, axis=1)
+        df.index = map(lambda d: d[0:4] + "-" + d[4:6] + "-" + d[6:], df.index)
+        df.index.name = "date"
 
         self.data["circ_mv"] = df
 
@@ -454,17 +453,11 @@ class Mongo(object):
         :return: Load turnover ratio into self.data dictionary.
         """
 
-        if self.data["stock_list"] is None:
-            self.load_stock_list()
-
-        df = pd.DataFrame(index=self.calendar)
-        for code in self.data["stock_list"]:
-            tmp = pd.DataFrame(
-                self.db["daily_basic"].find({"code": code})
-            )[["trade_date", "turnover_rate"]]
-            tmp.rename(columns={"trade_date": "date", "turnover_rate": "turnover"}, inplace=True)
-            tmp["date"] = list(map(lambda d: d[0:4] + "-" + d[4:6] + "-" + d[6:], tmp["date"]))
-            df[code] = tmp.set_index("date")
+        df = pd.DataFrame(self.db["daily_basic"].find(
+            {}, {"_id": 0, "code": 1, "trade_date": 1, "turnover_rate": 1}))
+        df = df.set_index(["trade_date", "code"]).unstack().droplevel(0, axis=1)
+        df.index = map(lambda d: d[0:4] + "-" + d[4:6] + "-" + d[6:], df.index)
+        df.index.name = "date"
 
         self.data["turnover"] = df
 
@@ -477,17 +470,11 @@ class Mongo(object):
         :return: Load turnover ratio of circulating capitalization into self.data dictionary.
         """
 
-        if self.data["stock_list"] is None:
-            self.load_stock_list()
-
-        df = pd.DataFrame(index=self.calendar)
-        for code in self.data["stock_list"]:
-            tmp = pd.DataFrame(
-                self.db["daily_basic"].find({"code": code})
-            )[["trade_date", "turnover_rate_f"]]
-            tmp.rename(columns={"trade_date": "date", "turnover_rate_f": "circ_turnover"}, inplace=True)
-            tmp["date"] = list(map(lambda d: d[0:4] + "-" + d[4:6] + "-" + d[6:], tmp["date"]))
-            df[code] = tmp.set_index("date")
+        df = pd.DataFrame(self.db["daily_basic"].find(
+            {}, {"_id": 0, "code": 1, "trade_date": 1, "turnover_rate_f": 1}))
+        df = df.set_index(["trade_date", "code"]).unstack().droplevel(0, axis=1)
+        df.index = map(lambda d: d[0:4] + "-" + d[4:6] + "-" + d[6:], df.index)
+        df.index.name = "date"
 
         self.data["circ_turnover"] = df
 
