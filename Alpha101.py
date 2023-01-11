@@ -3,6 +3,7 @@ from MongoLoader import Mongo
 
 
 class Alpha101(Mongo):
+
     def __init__(self):
         super().__init__()
         self.alpha101 = dict.fromkeys(["0"*(3-len(str(_)))+str(_) for _ in range(1, 102)])
@@ -886,7 +887,7 @@ class Alpha101(Mongo):
             self.alpha101["081"] = -1 * (tmp2 < tmp3)
 
         return self.alpha101["081"]
-            
+
 
 
 

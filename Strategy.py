@@ -1,6 +1,7 @@
 from TradingStrategy151 import TradingStrategy151
 
 class Strategy(TradingStrategy151):
+
     def __init__(self):
         super().__init__()
 

@@ -9,7 +9,7 @@ class Mongo(object):
         self.client = pymongo.MongoClient("mongodb://localhost:27017/")
         self.db = self.client.get_database("quantaxis")
 
-        self.available_dname = [
+        self.available_data = [
             "stock_list", "index_list", "etf_list",
             "open", "close", "high", "low", "volume", "money", "rate", "lograte",
             "vwap", "adj", "mv", "turnover", "circ_mv", "circ_turnvoer", "xdxr",
@@ -21,7 +21,7 @@ class Mongo(object):
             "close_min",
         ]
 
-        self.data = dict.fromkeys(self.available_dname)
+        self.data = dict.fromkeys(self.available_data)
 
 
     @property
@@ -303,7 +303,7 @@ class Mongo(object):
 
     @property
     def cache(self) -> list:
-        return [dname for dname in self.available_dname if self.data[dname] is not None]
+        return [dname for dname in self.available_data if self.data[dname] is not None]
 
 
     def release_memory(self, dname=None, clear_all=False):
@@ -314,7 +314,7 @@ class Mongo(object):
         """
 
         if clear_all:
-            self.data = dict.fromkeys(self.available_dname)
+            self.data = dict.fromkeys(self.available_data)
             print("Successfully cleared all the data.")
 
         elif type(dname) == str:
@@ -333,7 +333,7 @@ class Mongo(object):
         :param end_date: Default as None. Expected for a date in str format such as "1974-06-23".
         """
 
-        for dname in self.available_dname:
+        for dname in self.available_data:
             if self.data[dname] is None:
                 continue
             elif self.data[dname].index.names[0] == "date":
@@ -369,7 +369,7 @@ class Mongo(object):
         pass
         threshold = len(self.calendar) * maxNanProp
 
-        for dname in self.available_dname:
+        for dname in self.available_data:
             count = 0
             if self.data[dname] is None:
                 continue

@@ -7,6 +7,7 @@ from utils import *
 
 
 class Invoker(Factor, Strategy, Alpha101):
+
     def __init__(self):
         # print("I am a beacon of knowledge blazing out across a black sea of ignorance.")
         super().__init__()

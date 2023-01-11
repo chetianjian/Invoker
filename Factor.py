@@ -1,12 +1,14 @@
 from utils import *
 from MongoLoader import Mongo
 
+
 class Factor(Mongo):
+
     def __init__(self):
         super().__init__()
 
-
-    def indicator(self):
+    @property
+    def sign(self):
         """
         :return: Return -1.0 if today's yield < 0 otherwise 1.0
         """
@@ -14,7 +16,6 @@ class Factor(Mongo):
         assert self.rate is not None
 
         return 2 * ((self.rate >= 0) - 0.5)
-
 
     # def adding_data(self, data: list[str]):
     #     """
@@ -24,11 +25,10 @@ class Factor(Mongo):
     #
     #     return self.__init__(data)
 
-
     def IC(self, factor, cumulative=False):
         """
         DataFrame IC
-        :param factor: Input factor data.
+        :param factor: pd.DataFrame. Input factor data.
         :param cumulative: Bool, return cumulative IC values or not.
         :return: cross-sectional IC values, or cumulative cross-sectional IC values.
         """
@@ -85,7 +85,7 @@ class Factor(Mongo):
         assert self.close is not None
 
         return 100 * (self.close - self.close.rolling(window, closed=closed).mean()) / \
-               self.close.rolling(window, closed=closed).mean()
+            self.close.rolling(window, closed=closed).mean()
 
 
     def vol(self, window=10, closed=None):
@@ -100,21 +100,75 @@ class Factor(Mongo):
         return self.turnover.rolling(window, closed=closed).mean()
 
 
-    def cci(self, window=10, closed=None):
+    @property
+    def atr(self):
         """
-        :param window: int, default = 10.
+        :return: The Average True Range. Calculated by:
+            "window-days-average of: max(high-low, abs(high-previous_close), abs(low-previous_close))"
+        """
+
+        assert self.close is not None
+        assert self.high is not None
+        assert self.low is not None
+
+        price = self.close.shift(1)
+        TR = np.maximum(self.high - self.low,
+                        np.absolute(self.high - price),
+                        np.absolute(self.low - price))
+
+        return TR.rolling(window=14, min_period=1, closed="left").mean()
+
+
+    @property
+    def obv(self):
+        """
+        OBV_today = OBV_prev + volume_today         if close_today > close_prev
+                  = OBV_prev + 0                    if close_today == close_prev
+                  = OBV_prev - volume_today         if close_today < close_prev
+        :return: On-Balance Volume （累积量能）
+        """
+
+        assert self.volume is not None
+        assert self.close is not None
+
+        comparison = self.close.fillna(0).rolling(2).apply(
+            lambda arr: 1 * (arr[1] > arr[0]) - 1 * (arr[1] < arr[0]))
+
+        obv = self.volume.copy()
+
+        for _ in range(len(obv) - 1):
+            obv.iloc[_ + 1] = obv.iloc[_] + comparison.iloc[_ + 1] * obv.iloc[_ + 1]
+
+        return obv
+
+
+    def maobv(self, window=30, closed=None):
+        """
+        window日 移动平均 OBV
+        :param window: int, default = 12.
         :param closed: str in ["left", "right", "both", "neither"], default = None.
-        :return: window日顺势指标。
-                CCI := (TYP - MA(TYP, window)) / (0.015 * AVEDEV(TYP, window))
-                TYP := (HIGH + LOW + CLOSE) / 3
+        :return: OBV moving average.
+        """
+
+        obv = self.obv
+
+        return obv.rolling(window=window, closed=closed).mean()
+
+
+    @property
+    def cci(self):
+        """
+        顺势指标 (14日)
+        CCI := (TYP - MA(TYP, 14)) / (0.015 * AVEDEV(TYP, 14))
+        TYP := (HIGH + LOW + CLOSE) / 3
         """
 
         for dname in ["high", "low", "close"]:
             assert self.data[dname] is not None
 
         typ = (self.high + self.low + self.close) / 3
-        return (typ - typ.rolling(window, closed=closed).mean()) / \
-               (0.015 * typ.rolling(window).apply(lambda x: arrAvgAbs(x)))
+        return (typ - typ.rolling(window=14).mean()) / \
+            (0.015 * typ.rolling(window=14).apply(lambda x: arrAvgAbs(x)))
 
 
     def cci_vwap(self, window=10, closed=None):
@@ -128,7 +182,7 @@ class Factor(Mongo):
         assert self.vwap is not None
 
         return (self.vwap - self.vwap.rolling(window, closed=closed).mean()) / \
-               (0.015 * self.vwap.rolling(window, closed=closed).apply(lambda x: arrAvgAbs(x)))
+            (0.015 * self.vwap.rolling(window, closed=closed).apply(lambda x: arrAvgAbs(x)))
 
 
     def bollup(self, window=20, closed=None):
@@ -148,7 +202,7 @@ class Factor(Mongo):
     def price_ema(self, which_price="close", window=10, fillna=False):
         """
         价格的指数移动平均线
-        :param window: int, default = 20.
+        :param window: int, default = 20.qwe
         :param which_price: str in ["close", "open", "high", "low", "vwap"], default = "close".
                 使用哪种价格计算指数移动均线。
         :param fillna: If fill NaNs, default for False, otherwise input a value.
@@ -215,7 +269,7 @@ class Factor(Mongo):
             assert self.data[dname] is not None
 
         result = 100 * (self.high - self.close.shift(1)).rolling(
-                    window, closed=closed).sum() / \
+            window, closed=closed).sum() / \
                  (self.close.shift(1) - self.low).rolling(
                      window, closed=closed).sum()
         return result[~np.isinf(result)]
@@ -272,7 +326,7 @@ class Factor(Mongo):
         assert self.volume is not None
 
         return self.volume.ewm(alpha=2 / (short + 1)).mean() - \
-               self.volume.ewm(alpha=2 / (long + 1)).mean()
+            self.volume.ewm(alpha=2 / (long + 1)).mean()
 
 
     def vdea(self, short=12, long=26, window=9, closed=None):
@@ -309,7 +363,7 @@ class Factor(Mongo):
         """
 
         return self.vdiff(short=short, long=long) - \
-               self.vdea(short=short, long=long, window=window, closed=closed)
+            self.vdea(short=short, long=long, window=window, closed=closed)
 
 
     def vroc(self, window=6):
@@ -385,10 +439,10 @@ class Factor(Mongo):
         assert self.close is not None
         assert self.money is not None
 
-        valid_days = self.indicator().rolling(window, closed=closed).sum()
+        valid_days = self.sign().rolling(window, closed=closed).sum()
         return (self.close - self.close.shift(window)) * \
-               self.money.rolling(window, closed=closed).sum() * \
-               valid_days / self.close.shift(window)
+            self.money.rolling(window, closed=closed).sum() * \
+            valid_days / self.close.shift(window)
 
 
     def energy(self, window=3, closed=None):
@@ -400,7 +454,7 @@ class Factor(Mongo):
         """
 
         assert self.volume is not None
-        assert self.rate
+        assert self.rate is not None
 
         result = self.volume * self.rate ** 2
         return result.rolling(window, closed=closed).sum()
@@ -513,24 +567,20 @@ class Factor(Mongo):
         return result.rolling(window=window, closed=closed).sum()
 
 
-    def rsj(self, window=7, closed=None):
+    @property
+    def rsj(self):
         """
-        :param window: int, default = 7.
-        :param closed: str in ["left", "right", "both", "neither"], default = None.
-        :return: RSJ_7
+        :return: 高频波动率不对称性
         """
 
         assert self.rate is not None
 
-        def serial(arr):
-            diff = 0
-            for r in arr:
-                diff += np.sign(r) * r ** 2
-            return diff
+        positive = np.power(self.rate[self.rate > 0], 2)
+        negative = np.power(self.rate[self.rate < 0], 2)
 
-        return self.rate.rolling(window, closed=closed).apply(serial) / \
-               self.rate.rolling(window, closed=closed).apply(
-                   lambda col: np.nansum(col ** 2))
+        return (positive.rolling(window=48, min_periods=1).sum() -
+                negative.rolling(window=48, min_periods=1).sum()) / \
+            self.rate.rolling(window=48, min_periods=1).sum()
 
 
     def turnover_var(self, window=12, closed=None):
@@ -555,7 +605,7 @@ class Factor(Mongo):
         assert self.vwap is not None
 
         return (self.vwap - self.vwap.rolling(window).mean()) ** 2 / \
-               self.vwap.rolling(window).var()
+            self.vwap.rolling(window).var()
 
 
     def cp_self(self, window=20, rise=True, closed=None):
@@ -572,7 +622,6 @@ class Factor(Mongo):
             assert self.data[dname] is not None
 
         turnover_coef = 1 + mvNeutralize(self.turnover, self.mv)
-
         result = turnover_coef * ((self.high - self.open) /
                                   (self.close - self.open)) ** 2 if rise else \
             ((self.open - self.low) - (self.open - self.close)) ** 2
@@ -728,7 +777,7 @@ class Factor(Mongo):
         assert self.close is not None
 
         return 100 * (self.close - self.close.shift(window)) / \
-               self.close.shift(window)
+            self.close.shift(window)
 
 
     def mfi(self, window=14, closed=None):
@@ -828,7 +877,7 @@ class Factor(Mongo):
         logr = np.log(self.close / self.close.shift(1))
         prod_consec_abslogr = np.abs(logr) * np.abs(logr.shift(1))
         return np.sqrt(window - 2) * logr / \
-               np.sqrt(prod_consec_abslogr.rolling(window, closed=closed).sum())
+            np.sqrt(prod_consec_abslogr.rolling(window, closed=closed).sum())
 
 
     def jackknife_weighted_profit(self, window=10, closed=None, method="variation"):
@@ -943,18 +992,17 @@ class Factor(Mongo):
         """
         :param window: RSI window length, set default as 6.
         :param closed: str in ["left", "right", "both", "neither"], default = None.
-        :return: RSI values when RSI length takes 25.
+        :return: RSI values when RSI length takes 6.
         """
 
         assert self.rate is not None
 
         rs = self.rate.rolling(window=window, closed=closed).apply(
-                    lambda series: np.nansum(series[series > 0])) / \
-                self.rate.rolling(window=window, closed=closed).apply(
-                    lambda series: abs(np.nansum(series[series < 0])))
+            lambda series: np.nansum(series[series > 0])) / \
+             self.rate.rolling(window=window, closed=closed).apply(
+                 lambda series: abs(np.nansum(series[series < 0])))
 
         return 100 - 100 / (1 + rs)
-
 
 
     def rsi_quick(self, window=25, closed=None):
@@ -967,7 +1015,7 @@ class Factor(Mongo):
         assert self.rate is not None
 
         rs_25 = self.rate.rolling(window=window, closed=closed).apply(
-                    lambda series: np.nansum(series[series > 0])) / \
+            lambda series: np.nansum(series[series > 0])) / \
                 self.rate.rolling(window=window, closed=closed).apply(
                     lambda series: abs(np.nansum(series[series < 0])))
 
@@ -984,50 +1032,15 @@ class Factor(Mongo):
         assert self.rate is not None
 
         rs_100 = self.rate.rolling(window=window, closed=closed).apply(
-                    lambda series: np.nansum(series[series > 0])) / \
+            lambda series: np.nansum(series[series > 0])) / \
                  self.rate.rolling(window=window, closed=closed).apply(
                      lambda series: abs(np.nansum(series[series < 0])))
 
         return 100 - 100 / (1 + rs_100)
 
 
-    def atr(self, usedPrice="close", window=1, closed="left"):
+    def chandelier_exit(self, multiplier=1.85, window=1, closed="left"):
         """
-        :param usedPrice: Denote the type of prious-day-price used for calculation.
-                Default as "close", but can also use "vwap".
-        :param window: int, default = 1.
-        :param closed: str in ["left", "right", "both", "neither"], default = None.
-        :return: The Average True Range. Calculated by
-            "window-days-average of: max(high-low, abs(high-previous_close), abs(low-previous_close))"
-        """
-
-        if usedPrice == "close":
-            try:
-                assert self.close is not None
-            except:
-                raise AssertionError("close data should be loaded in advance.")
-            price = self.close.shift(1)
-        else:
-            try:
-                assert self.vwap is not None
-            except:
-                raise AssertionError("vwap data should be loaded in advance.")
-            price = self.vwap.shift(1)
-
-        assert self.high is not None
-        assert self.low is not None
-
-        TR = np.maximum(self.high - self.low,
-                        np.absolute(self.high - price),
-                        np.absolute(self.low - price))
-
-        return TR.rolling(window=window, closed=closed).mean()
-
-
-    def chandelier_exit(self, usedPrice="close", multiplier=1.85, window=1, closed="left"):
-        """
-        :param usedPrice: Denote which type of prices is used for calculation.
-                Default as "close", but can also use "vwap".
         :param multiplier: float, default = 1.85. The multiplier used to
                 control ATR. Theoretically, techonological companies shoud
                 have larger multipliers compared to others.
@@ -1041,47 +1054,8 @@ class Factor(Mongo):
         assert self.high is not None
         assert self.low is not None
 
-        atr = multiplier * self.atr(usedPrice=usedPrice, window=window, closed=closed)
+        atr = multiplier * self.atr(window=window, closed=closed)
         ExitLong = self.high.rolling(window=window, closed=closed).max() - atr
         ExitShort = self.low.rolling(window=window, closed=closed).min() + atr
 
         return 1 * (self.close > ExitShort) - (self.close < ExitLong)
-
-
-    def obv(self):
-        """
-        OBV_today = OBV_prev + volume_today         if close_today > close_prev
-                  = OBV_prev + 0                    if close_today == close_prev
-                  = OBV_prev - volume_today         if close_today < close_prev
-        :return: On-Balance Volume （累积量能）
-        """
-
-        assert self.volume is not None
-        assert self.close is not None
-
-        comparison = self.close.fillna(0).rolling(2).apply(
-            lambda arr: 1 * (arr[1] > arr[0]) - 1 * (arr[1] < arr[0]))
-
-        obv = self.volume.copy()
-
-        for _ in range(len(obv)-1):
-            obv.iloc[_+1] = obv.iloc[_] + comparison.iloc[_+1] * obv.iloc[_+1]
-
-        return obv
-
-
-    def maobv(self, window=30, closed=None):
-        """
-        window日 移动平均 OBV
-        :param window: int, default = 12.
-        :param closed: str in ["left", "right", "both", "neither"], default = None.
-        :return: OBV moving average.
-        """
-
-        obv = self.obv()
-
-        return obv.rolling(window=window, closed=closed).mean()
-
-
-
-
