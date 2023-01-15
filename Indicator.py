@@ -12,6 +12,8 @@ class Indicator(Mongo):
         settings and are expressed in python properties, while the uppercases would adopt
         user-identified parameters and are expressed in python functions (e.g. window size;
         whether to use vwap or close as daily prices; etc.).
+        
+        In fact, this class (Indicator) is the superclass of class Factor.
         """
 
         self.available_indicator = [
@@ -112,6 +114,55 @@ class Indicator(Mongo):
 
         return self.indicator["ATR"]
 
+
+    def RSI(self, window=6, closed=None):
+        """
+        :param window: RSI window length, set default as 6.
+        :param closed: str in ["left", "right", "both", "neither"], default = None.
+        :return: RSI values when RSI length takes 6.
+        """
+
+        assert self.rate is not None
+
+        positive = self.rate[self.rate > 0]
+        negative = self.rate[self.rate < 0]
+        rs = positive.rolling(window=window, min_periods=1, closed=closed).sum() / \
+             np.absolute(negative.rolling(window=window, min_periods=1, closed=closed).sum())
+
+        return 100 - 100 / (1 + rs)
+
+
+    def ROC(self, window=9):
+        """
+        ROC: Rate of Change indicator.
+             100 * (当前收盘价 - window天前收盘价) / window天前收盘价
+        :param window: int, default = 9.
+        :return: window-days Rate of Change indicator
+        """
+
+        assert self.close is not None
+
+        return 100 * self.close / self.close.shift(window) - 100
+
+
+
+    def KST(self):
+        """
+        KST: Know Sure Thing
+             ROCMA1 = 10 Period SMA of 10 Period ROC
+             ROCMA2 = 10 Period SMA of 15 Period ROC
+             ROCMA3 = 10 Period SMA of 20 Period ROC
+             ROCMA4 = 15 Period SMA of 30 Period ROC
+        :return: KST = (ROCMA1 * 1) + (ROCMA2 * 2) + (ROCMA3 * 3) + (ROCMA4 * 4)
+        """
+
+        rocma_1 = self.ROC(10).rolling(10).mean()
+        rocma_2 = self.ROC(15).rolling(10).mean()
+        rocma_3 = self.ROC(20).rolling(10).mean()
+        rocma_4 = self.ROC(30).rolling(15).mean()
+
+        result = rocma_1 + rocma_2 * 2 + rocma_3 * 3 + rocma_4 * 4
+        return result
 
 
 

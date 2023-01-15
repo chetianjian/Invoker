@@ -1,8 +1,8 @@
 from utils import *
-from MongoLoader import Mongo
+from Indicator import Indicator
 
 
-class Factor(Mongo):
+class Factor(Indicator):
 
     def __init__(self):
         super().__init__()
@@ -379,19 +379,20 @@ class Factor(Mongo):
         return result[~np.isinf(result)]
 
 
-    def roc(self, window=9):
+    @property
+    def roc(self):
         """
         ROC: Rate of Change indicator.
              100 * (当前收盘价 - window天前收盘价) / window天前收盘价
-        :param window: int, default = 9.
         :return: window-days Rate of Change indicator
         """
 
         assert self.close is not None
 
-        return 100 * self.close / self.close.shift(window) - 100
+        return 100 * self.close / self.close.shift(9) - 100
 
 
+    @property
     def kst(self):
         """
         KST: Know Sure Thing
@@ -402,15 +403,16 @@ class Factor(Mongo):
         :return: KST = (ROCMA1 * 1) + (ROCMA2 * 2) + (ROCMA3 * 3) + (ROCMA4 * 4)
         """
 
-        rocma_1 = self.roc(10).rolling(10).mean()
-        rocma_2 = self.roc(15).rolling(10).mean()
-        rocma_3 = self.roc(20).rolling(10).mean()
-        rocma_4 = self.roc(30).rolling(15).mean()
+        rocma_1 = self.ROC(10).rolling(10).mean()
+        rocma_2 = self.ROC(15).rolling(10).mean()
+        rocma_3 = self.ROC(20).rolling(10).mean()
+        rocma_4 = self.ROC(30).rolling(15).mean()
 
         result = rocma_1 + rocma_2 * 2 + rocma_3 * 3 + rocma_4 * 4
         return result
 
 
+    @property
     def ppo(self):
         """
         PPO: Price Oscillator Indicator. (追踪动量，类似于MACD).
@@ -988,19 +990,17 @@ class Factor(Mongo):
         return (1 - weight) * self.low.rolling(window, closed=closed).mean()
 
 
-    def rsi(self, window=6, closed=None):
+    def rsi(self):
         """
-        :param window: RSI window length, set default as 6.
-        :param closed: str in ["left", "right", "both", "neither"], default = None.
         :return: RSI values when RSI length takes 6.
         """
 
         assert self.rate is not None
 
-        rs = self.rate.rolling(window=window, closed=closed).apply(
-            lambda series: np.nansum(series[series > 0])) / \
-             self.rate.rolling(window=window, closed=closed).apply(
-                 lambda series: abs(np.nansum(series[series < 0])))
+        positive = self.rate[self.rate > 0]
+        negative = self.rate[self.rate < 0]
+        rs = positive.rolling(window=6, min_periods=1).sum() / \
+             np.absolute(negative.rolling(window=6, min_periods=1).sum())
 
         return 100 - 100 / (1 + rs)
 
@@ -1059,3 +1059,5 @@ class Factor(Mongo):
         ExitShort = self.low.rolling(window=window, closed=closed).min() + atr
 
         return 1 * (self.close > ExitShort) - (self.close < ExitLong)
+
+

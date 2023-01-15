@@ -68,6 +68,22 @@ def ts_argmax(df, window):
     return df.rolling(window=window).apply(np.argmax) + 1
 
 
+def decay_linear(df, window):
+    """
+    Weighted moving average over the past 'window' days with linearly decaying weights: window, window – 1, …, 1
+    (rescaled to sum up to 1)
+    :param df: Target pd.DataFrame.
+    :param window: The linear weighted moving average period.
+    :return: The rescaled pd.DataFrame of linear weighted moving average.
+    """
+
+    result = df * window
+    for _ in range(1, window):
+        result = result + df.shift(_) * (window - _)
+
+    return 2 * result / (window + window**2)
+
+
 def corr(df1, df2, window) -> pd.DataFrame:
     """
     :param df1: First dataframe.
