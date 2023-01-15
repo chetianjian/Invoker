@@ -146,25 +146,4 @@ class Indicator(Mongo):
 
 
 
-    def KST(self):
-        """
-        KST: Know Sure Thing
-             ROCMA1 = 10 Period SMA of 10 Period ROC
-             ROCMA2 = 10 Period SMA of 15 Period ROC
-             ROCMA3 = 10 Period SMA of 20 Period ROC
-             ROCMA4 = 15 Period SMA of 30 Period ROC
-        :return: KST = (ROCMA1 * 1) + (ROCMA2 * 2) + (ROCMA3 * 3) + (ROCMA4 * 4)
-        """
-
-        rocma_1 = self.ROC(10).rolling(10).mean()
-        rocma_2 = self.ROC(15).rolling(10).mean()
-        rocma_3 = self.ROC(20).rolling(10).mean()
-        rocma_4 = self.ROC(30).rolling(15).mean()
-
-        result = rocma_1 + rocma_2 * 2 + rocma_3 * 3 + rocma_4 * 4
-        return result
-
-
-
-
 

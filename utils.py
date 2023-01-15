@@ -60,12 +60,22 @@ def ts_max(df, window) -> pd.DataFrame:
 
 def ts_argmax(df, window):
     """
-    :param df: Input dataframe.
+    :param df: Target pd.DataFrame.
     :param window: The rolling window size.
-    :return:
+    :return: argmax during the past 'window' days for each day.
     """
 
     return df.rolling(window=window).apply(np.argmax) + 1
+
+
+def ts_argmin(df, window):
+    """
+    :param df: Target pd.DataFrame.
+    :param window: The rolling window size.
+    :return: argmin during the past 'window' days for each day.
+    """
+
+    return df.rolling(window=window).apply(np.argmin) + 1
 
 
 def decay_linear(df, window):

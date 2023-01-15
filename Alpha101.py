@@ -528,8 +528,22 @@ class Alpha101(Mongo):
         return self.alpha101["038"]
 
 
+    @property
+    def alpha_039(self):
+        """
+        :return: ((-1 * rank((delta(close, 7) * (1 - rank(decay_linear((volume / adv20), 9)))))) *
+                    (1 + rank(sum(returns, 250))))
+        """
 
+        if self.alpha101["039"] is None:
+            adv20 = self.volume.rolling(20).mean()
+            tmp1 = self.close.diff(7)
+            tmp2 = 1 - decay_linear(self.volume / adv20, 9).rank(pct=True)
+            tmp3 = 1 + self.rate.rolling(250).sum().rank(pct=True)
 
+            self.alpha101["039"] = -1 * (tmp1 * tmp2).rank(pct=True) * tmp3
+
+        return self.alpha101["039"]
 
 
     @property
@@ -769,11 +783,13 @@ class Alpha101(Mongo):
         :return: (0 - (1 * ((close - vwap) / decay_linear(rank(ts_argmax(close, 30)), 2))))
         """
 
-        # TO DO:
-        return None
+        if self.alpha101["057"] is None:
+            tmp1 = self.close - self.vwap
+            tmp2 = decay_linear(ts_argmax(self.close, 30).rank(pct=True), 2)
 
+            self.alpha101["057"] = -1 * tmp1 / tmp2
 
-
+        return self.alpha101["057"]
 
 
     @property
@@ -911,6 +927,26 @@ class Alpha101(Mongo):
             self.alpha101["075"] = (tmp1 < tmp2).astype(int)
 
         return self.alpha101["075"]
+
+
+
+    @property
+    def alpha_077(self):
+        """
+        :return: min(rank(decay_linear(((((high + low) / 2) + high) - (vwap + high)), 20.0451)),
+                    rank(decay_linear(correlation(((high + low) / 2), adv40, 3.1614), 5.64125)))
+        """
+
+        if self.alpha101["077"] is None:
+            adv40 = self.volume.rolling(window=40).mean()
+            tmp1 = decay_linear((3 * self.high + self.low) / 2 - self.vwap - self.high, 20)
+            tmp2 = decay_linear(corr((self.high + self.low) / 2, adv40, 3), 6)
+
+            self.alpha101["077"] = np.minimum(tmp1, tmp2)
+
+        return self.alpha101["077"]
+
+
 
 
 
