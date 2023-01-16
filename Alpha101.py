@@ -123,7 +123,8 @@ class Alpha101(Mongo):
     @property
     def alpha_011(self):
         """
-        :return: ((rank(ts_max((vwap - close), 3)) + rank(ts_min((vwap - close), 3))) * rank(delta(volume, 3)))
+        :return: ((rank(ts_max((vwap - close), 3)) + rank(ts_min((vwap - close), 3))) *
+                 rank(delta(volume, 3)))
         """
 
         if self.alpha101["011"] is None:
