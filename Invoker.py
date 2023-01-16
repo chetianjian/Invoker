@@ -19,6 +19,7 @@ class Invoker(Factor, Strategy, Alpha101):
         :param code: A single stock code.
         :return: A dataframe with all daily data of the given stock.
         """
+
         return pd.DataFrame(cls().db["stock_day"].find({"code": code})).drop(
             columns=["_id", "date_stamp"]
         ).rename(
@@ -32,8 +33,15 @@ class Invoker(Factor, Strategy, Alpha101):
         :param code: A single stock code.
         :return: The corresponding name of the given stock.
         """
+
         result = pd.DataFrame(cls().db["stock_list"].find({"code": code}))
         return result["name"][0] if 0 not in result.shape else None
+
+
+    @property
+    def broker_recommend(self):
+        return pd.Series(self.block2code("券商金股"),
+                         [self.code2name(_) for _ in self.block2code("券商金股")])
 
 
     @classmethod
@@ -42,6 +50,7 @@ class Invoker(Factor, Strategy, Alpha101):
         :param name: A single stock name.
         :return: The corresponding code of the given stock.
         """
+
         result = pd.DataFrame(cls().db["stock_list"].find({"name": name}))
         return result["code"][0] if 0 not in result.shape else None
 
@@ -52,6 +61,7 @@ class Invoker(Factor, Strategy, Alpha101):
         :param code: A single stock code.
         :return: The block names which the stock belongs to.
         """
+
         result = pd.DataFrame(cls().db["stock_block"].find({"code": code}))
         return list(set(result["blockname"])) if 0 not in result.shape else None
 
@@ -62,6 +72,7 @@ class Invoker(Factor, Strategy, Alpha101):
         :param name: The name of the queried block, such as "地下管网".
         :return: A list of matching stock codes.
         """
+
         result = pd.DataFrame(cls().db["stock_block"].find({"blockname": name}))
         return list(set(result["code"])) if 0 not in result.shape else None
 
@@ -76,6 +87,7 @@ class Invoker(Factor, Strategy, Alpha101):
                   Draw the candle plot for the last-n-days.
         :return: yield one candle graph each time you call the function.
         """
+
         for code in code_list:
             # noinspection PyBroadException
             try:

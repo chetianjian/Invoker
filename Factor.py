@@ -116,7 +116,7 @@ class Factor(Indicator):
                         np.absolute(self.high - price),
                         np.absolute(self.low - price))
 
-        return TR.rolling(window=14, min_period=1, closed="left").mean()
+        return TR.rolling(window=14, min_periods=1, closed="left").mean()
 
 
     @property

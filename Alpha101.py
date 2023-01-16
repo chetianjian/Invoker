@@ -970,6 +970,12 @@ class Alpha101(Mongo):
         return self.alpha101["078"]
 
 
+
+
+
+
+
+
     @property
     def alpha_081(self):
         """
@@ -1052,6 +1058,33 @@ class Alpha101(Mongo):
         return self.alpha101["086"]
 
 
+
+
+
+    @property
+    def alpha_088(self):
+        """
+        :return: min(rank(decay_linear(((rank(open) + rank(low)) -
+                    (rank(high) + rank(close))), 8.06882)),
+                    Ts_Rank(decay_linear(correlation(Ts_Rank(close, 8.44728),
+                    Ts_Rank(adv60, 20.6966), 8.01266), 6.65053), 2.61957))
+        """
+
+        if self.alpha101["088"] is None:
+            adv60 = self.volume.rolling(window=60).mean()
+            tmp1 = self.open.rank(pct=True) + self.low.rank(pct=True)
+            tmp2 = self.high.rank(pct=True) + self.close.rank(pct=True)
+            tmp3 = decay_linear(tmp1 - tmp2, 8).rank(pct=True)
+            tmp4 = corr(ts_rank(self.close, 8), ts_rank(adv60, 21), 8)
+            tmp5 = ts_rank(decay_linear(tmp4, 7), 3)
+
+            self.alpha101["088"] = np.minimum(tmp3, tmp5)
+
+        return self.alpha101["088"]
+
+
+
+
     @property
     def alpha_094(self):
         """
@@ -1087,6 +1120,30 @@ class Alpha101(Mongo):
             self.alpha101["095"] = (tmp1 < tmp3).astype(int)
 
         return self.alpha101["095"]
+
+
+
+
+
+
+    @property
+    def alpha_098(self):
+        """
+        :return:  (rank(decay_linear(correlation(vwap, sum(adv5, 26.4719), 4.58418), 7.18088)) -
+                  rank(decay_linear(Ts_Rank(Ts_ArgMin(correlation(rank(open),
+                  rank(adv15), 20.8187), 8.62571), 6.95668), 8.07206)))
+        """
+
+        if self.alpha101["098"] is None:
+            adv5 = self.volume.rolling(window=5).mean()
+            adv15 = self.volume.rolling(window=15).mean()
+            tmp1 = decay_linear(corr(self.vwap, adv5.rolling(26).sum(), 5), 7).rank(pct=True)
+            tmp2 = ts_argmin(corr(self.open.rank(pct=True), adv15.rank(pct=True), 21), 9)
+            tmp3 = decay_linear(ts_rank(tmp2, 7), 8).rank(pct=True)
+
+            self.alpha101["098"] = tmp1 - tmp3
+
+        return self.alpha101["098"]
 
 
     @property
