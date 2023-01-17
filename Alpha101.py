@@ -1084,6 +1084,22 @@ class Alpha101(Mongo):
         return self.alpha101["088"]
 
 
+    @property
+    def alpha_092(self):
+        """
+        :return: min(Ts_Rank(decay_linear(((((high + low) / 2) + close) < (low + open)), 14.7221), 18.8683),
+                 Ts_Rank(decay_linear(correlation(rank(low), rank(adv30), 7.58555), 6.94024), 6.80584))
+        """
+
+        if self.alpha101["092"] is None:
+            adv30 = self.volume.rolling(window=30).mean()
+            tmp1 = ((self.high + self.low) / 2 + self.close) < (self.low + self.open)
+            tmp2 = ts_rank(decay_linear(tmp1, 15), 19)
+            tmp3 = ts_rank(decay_linear(corr(self.low.rank(pct=True), adv30.rank(pct=True), 8), 7), 7)
+
+            self.alpha101["092"] = np.minimum(tmp2, tmp3)
+
+        return self.alpha101["092"]
 
 
     @property
@@ -1123,6 +1139,23 @@ class Alpha101(Mongo):
         return self.alpha101["095"]
 
 
+    @property
+    def alpha_096(self):
+        """
+        :return: (max(Ts_Rank(decay_linear(correlation(rank(vwap), rank(volume), 3.83878), 4.16783), 8.38151),
+                 Ts_Rank(decay_linear(Ts_ArgMax(correlation(Ts_Rank(close, 7.45404), Ts_Rank(adv60, 4.13242),
+                 3.65459), 12.6556), 14.0365), 13.4143)) * -1)
+        """
+
+        if self.alpha101["096"] is None:
+            adv60 = self.volume.rolling(window=60).mean()
+            tmp1 = ts_rank(decay_linear(corr(self.vwap.rank(pct=True), self.volume.rank(pct=True), 4), 4), 8)
+            tmp2 = decay_linear(ts_argmax(corr(ts_rank(self.close, 7), ts_rank(adv60, 4), 4), 13), 14)
+
+            self.alpha101["096"] = -1 * np.maximum(tmp1, ts_rank(tmp2, 13))
+
+        return self.alpha101["096"]
+
 
 
 
@@ -1150,8 +1183,9 @@ class Alpha101(Mongo):
     @property
     def alpha_099(self):
         """
-        :return: ((rank(correlation(sum(((high + low) / 2), 19.8975), sum(adv60, 19.8975), 8.8136)) <
-                  (rank(correlation(low, volume, 6.28259))) * -1)
+        :return: ((rank(correlation(sum(((high + low) / 2), 19.8975),
+                 sum(adv60, 19.8975), 8.8136)) <
+                 (rank(correlation(low, volume, 6.28259))) * -1)
         """
 
         if self.alpha101["099"] is None:
@@ -1159,9 +1193,9 @@ class Alpha101(Mongo):
             tmp1 = ((self.high + self.low) / 2).rolling(window=20).sum()
             tmp2 = adv60.rolling(window=20).sum()
             tmp3 = corr(tmp1, tmp2, 9).rank(pct=True)
-            tmp4 = -1 * corr(self.low, self.volume, 6).rank(pct=True)
+            tmp4 = corr(self.low, self.volume, 6).rank(pct=True)
 
-            self.alpha101["099"] = (tmp3 < tmp4).astype(int)
+            self.alpha101["099"] = -1 * (tmp3 < tmp4).astype(int)
 
         return self.alpha101["099"]
 
@@ -1180,6 +1214,4 @@ class Alpha101(Mongo):
             self.alpha101["101"] = (self.close - self.open).div(self.high - self.low + 0.001)
 
         return self.alpha101["101"]
-
-
 
