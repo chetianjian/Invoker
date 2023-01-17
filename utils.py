@@ -112,7 +112,7 @@ def corr(df1, df2, window) -> pd.DataFrame:
         """
         raise AssertionError(msg)
 
-    return df1.rolling(window=window, min_periods=0).corr(df2)
+    return df1.rolling(window=window).corr(df2)
 
 
 def covar(df1: pd.DataFrame, df2: pd.DataFrame, window) -> pd.DataFrame:
@@ -133,7 +133,7 @@ def covar(df1: pd.DataFrame, df2: pd.DataFrame, window) -> pd.DataFrame:
         """
         raise AssertionError(msg)
 
-    return df1.rolling(window=window, min_periods=0).cov(df2)
+    return df1.rolling(window=window).cov(df2)
 
 
 def scale(df, alpha=1):
