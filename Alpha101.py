@@ -722,7 +722,7 @@ class Alpha101(Mongo):
 
         if self.alpha101["053"] is None:
             self.alpha101["053"] = -1 * ((self.close - self.low) - (self.high - self.close).div(
-                (self.close - self.low)).diff(9))
+                (self.close - self.low)).diff(9)).replace([np.inf, -np.inf], np.nan)
 
         return self.alpha101["053"]
 
@@ -793,6 +793,12 @@ class Alpha101(Mongo):
         return self.alpha101["057"]
 
 
+
+
+
+
+
+
     @property
     def alpha_061(self):
         """
@@ -827,6 +833,9 @@ class Alpha101(Mongo):
             self.alpha101["062"] = (tmp1 < tmp5).astype(int)
 
         return self.alpha101["062"]
+
+
+
 
 
 
@@ -908,7 +917,7 @@ class Alpha101(Mongo):
             tmp2 = (0.0261661 * self.high + 0.9738339 * self.vwap).rank(pct=True)
             tmp3 = corr(tmp2, self.volume.rank(pct=True), 11).rank(pct=True)
 
-            self.alpha101["074"] = (tmp1 < tmp3).astype(int)
+            self.alpha101["074"] = -1 * (tmp1 < tmp3).astype(int)
 
         return self.alpha101["074"]
 
@@ -987,7 +996,7 @@ class Alpha101(Mongo):
         if self.alpha101["081"] is None:
             adv10 = self.volume.rolling(window=10).mean()
             tmp1 = np.power(corr(self.vwap, adv10.rolling(window=50).sum(), 8).rank(pct=True), 4)
-            tmp2 = np.log(tmp1.rank(pct=True).rolling(window=15).prod()).rank(pct=True)
+            tmp2 = np.log(tmp1.rank(pct=True).rolling(window=15).apply(np.prod, raw=True)).rank(pct=True)
             tmp3 = corr(self.vwap.rank(pct=True), self.volume.rank(pct=True), 5).rank(pct=True)
 
             self.alpha101["081"] = -1 * (tmp2 < tmp3)
@@ -1009,18 +1018,30 @@ class Alpha101(Mongo):
         if self.alpha101["083"] is None:
             tmp1 = self.high - self.low
             tmp2 = self.close.rolling(window=5).sum() / 5
-            tmp3 = (tmp1 / tmp2).shift(2).rank(pct=True)
+            tmp3 = tmp1.div(tmp2).shift(2).rank(pct=True)
             tmp4 = (self.volume.rank(pct=True)).rank(pct=True)
             tmp5 = self.close.rolling(window=5).sum() / 5
-            tmp6 = tmp1 / tmp5
-            tmp7 = tmp6 / (self.vwap - self.close)
+            tmp6 = tmp1.div(tmp5).div(self.vwap - self.close)
 
-            self.alpha101["083"] = tmp3 * tmp4 / tmp7
+            self.alpha101["083"] = (tmp3 * tmp4 / tmp6).replace([np.inf, -np.inf], np.nan)
 
         return self.alpha101["083"]
 
 
+    @property
+    def alpha_084(self):
+        """
+        :return: SignedPower(Ts_Rank((vwap - ts_max(vwap, 15.3217)), 20.7127),
+                 delta(close, 4.96796))
+        """
 
+        if self.alpha101["084"] is None:
+            tmp1 = ts_rank(self.vwap - ts_max(self.vwap, 15), 21)
+            tmp2 = self.close.diff(5)
+
+            self.alpha101["084"] = np.power(tmp1, tmp2)
+
+        return self.alpha101["084"]
 
 
     @property
@@ -1052,9 +1073,9 @@ class Alpha101(Mongo):
         if self.alpha101["086"] is None:
             adv20 = self.volume.rolling(window=20).mean()
             tmp1 = ts_rank(corr(self.close, adv20.rolling(15).sum(), 6), 20)
-            tmp2 = -1 * ((self.open + self.close) - (self.vwap + self.open)).rank(pct=True)
+            tmp2 = (self.close - self.vwap).rank(pct=True)
 
-            self.alpha101["086"] = (tmp1 < tmp2).astype(int)
+            self.alpha101["086"] = -1 * ((tmp1 < tmp2).astype(int))
 
         return self.alpha101["086"]
 

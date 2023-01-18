@@ -4,16 +4,6 @@ import plotly
 import plotly.express as px
 import plotly.graph_objects as go
 from sklearn.linear_model import LinearRegression
-from scipy.stats import rankdata
-
-
-def rolling_rank(arr):
-    """
-    :param arr: Numpy array.
-    :return: The rank of the last value in the array.
-    """
-
-    return rankdata(arr)[-1]
 
 
 def stddev(df, window=1):
@@ -35,7 +25,7 @@ def ts_rank(df, window=1):
     :return: a pandas DataFrame with the time-series rank over the past window days.
     """
 
-    return df.rolling(window).apply(rolling_rank)
+    return df.rolling(window).rank()
 
 
 def ts_min(df, window) -> pd.DataFrame:
@@ -65,7 +55,7 @@ def ts_argmax(df, window):
     :return: argmax during the past 'window' days for each day.
     """
 
-    return df.rolling(window=window).apply(np.argmax) + 1
+    return df.rolling(window=window).apply(np.argmax, raw=True) + 1
 
 
 def ts_argmin(df, window):
@@ -75,7 +65,7 @@ def ts_argmin(df, window):
     :return: argmin during the past 'window' days for each day.
     """
 
-    return df.rolling(window=window).apply(np.argmin) + 1
+    return df.rolling(window=window).apply(np.argmin, raw=True) + 1
 
 
 def decay_linear(df, window):
@@ -112,7 +102,7 @@ def corr(df1, df2, window) -> pd.DataFrame:
         """
         raise AssertionError(msg)
 
-    return df1.rolling(window=window).corr(df2)
+    return df1.rolling(window=window).corr(df2).replace([np.inf, -np.inf], np.nan)
 
 
 def covar(df1: pd.DataFrame, df2: pd.DataFrame, window) -> pd.DataFrame:
