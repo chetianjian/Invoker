@@ -2,11 +2,10 @@ from typing import List
 
 from Factor import Factor
 from Strategy import Strategy
-from Alpha101 import Alpha101
 from utils import *
 
 
-class Invoker(Factor, Strategy, Alpha101):
+class Invoker(Factor, Strategy):
 
     def __init__(self):
         # print("I am a beacon of knowledge blazing out across a black sea of ignorance.")
@@ -95,6 +94,7 @@ class Invoker(Factor, Strategy, Alpha101):
                 yield draw_candle(self.code2df(code).iloc[-n:, :])
             except:
                 print("All candle graphs have been displayed.")
+                break
 
 
 

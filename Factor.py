@@ -1,21 +1,13 @@
 from utils import *
 from Indicator import Indicator
+from Alpha101 import Alpha101
 
 
-class Factor(Indicator):
+class Factor(Indicator, Alpha101):
 
     def __init__(self):
         super().__init__()
 
-    @property
-    def sign(self):
-        """
-        :return: Return -1.0 if today's yield < 0 otherwise 1.0
-        """
-
-        assert self.rate is not None
-
-        return 2 * ((self.rate >= 0) - 0.5)
 
     # def adding_data(self, data: list[str]):
     #     """
@@ -24,6 +16,40 @@ class Factor(Indicator):
     #     """
     #
     #     return self.__init__(data)
+
+
+    def neutralize(self, factor: pd.DataFrame, towards="market") -> pd.DataFrame:
+        """
+        Introduction:
+            Taking neutralization towards market values as an example, in this case,
+        we assume a linear relationship between the factor values and stocks' market
+        values.
+            The original factor values are input as a pd.DataFrame, hence, we run
+        linear regressions cross-sectionally along with the time axis, in other words,
+        for each trading day we ran linear regressions for paired values (X, Y),
+        where (xi)s are stocks' market values and (yi)s are stocks' factors. Then we
+        replace the orginal factor values by the residuals.
+            After applying the above approach, we would consider the effect raised by
+        the sizes of market values as 'removed', and thus the original factor values
+        are neutralized.
+
+        :param factor: Target factor values (pd.DataFrame) needed to be neutralized.
+        :param towards: Neutralization target. Default to 'market', meaning that
+                        neutralization is conducted towards market values.
+        :return: Factor values after neutralization.
+        """
+
+        if towards == "market":
+            self.mv
+
+
+
+
+
+
+
+
+
 
     def IC(self, factor, cumulative=False):
         """
@@ -47,8 +73,8 @@ class Factor(Indicator):
         序列 IC
         :param factor: Input factor data.
         :param code: Default as None. Otherwise, return the result of the objective stock code with format:
-                "XXXXXX.YZ", such as "000001.SZ".
-        :return: IC values for all stocks respectively, or just a single IC value or a specific stock.
+                "XXXXXX", such as "000001".
+        :return: IC values for all stocks respectively, or just a single IC value for a specific stock.
         """
 
         assert self.rate is not None
@@ -60,6 +86,53 @@ class Factor(Indicator):
 
         else:
             return factor[code].shift(1).corr(self.rate[code], min_periods=10)
+
+
+    def rank_IC(self, factor, cumulative=False):
+        """
+        DataFrame rank IC: Rollingly and cross-sectionally calculate the correlation
+                           between the (t-1)^th factor rank values and t^th rank returns.
+        :param factor: pd.DataFrame. Input factor data.
+        :param cumulative: Bool, return cumulative rank IC values or not.
+        :return: cross-sectional rank IC values, or cumulative cross-sectional IC values.
+        """
+
+        assert self.rate is not None
+
+        Rfactor = factor.rank(axis=1)  # Cross-sectionally ranked factor values.
+        Rreturn = self.rate.rank(axis=1)  # Cross-sectionally ranked daily returns.
+
+        result = Rfactor.shift(1).iloc[1:].apply(
+            lambda row: row.corr(Rreturn.loc[row.name]), axis=1)
+
+        return pd.DataFrame(result.cumsum(), columns=["IC"]).rename(
+            columns={"IC": "Cumulative rank IC"}) \
+            if cumulative else pd.DataFrame(result, columns=["rank IC"])
+
+
+    def rank_ic(self, factor, code=None):
+        """
+        序列 rank IC: For each individual stock, along with the direction of time series,
+                     calculate the correlation between its shifted factor values
+                     (for 1 time unit) and its rate of returns.
+        :param factor: Input factor data.
+        :param code: Default as None. Otherwise, return the result of the objective stock code with format:
+                "XXXXXX", such as "000001".
+        :return: rank IC values for all stocks respectively, or just a single IC value for a specific stock.
+        """
+
+        assert self.rate is not None
+
+        Rfactor = factor.rank(axis=1)  # Cross-sectionally ranked factor values.
+        Rreturn = self.rate.rank(axis=1)  # Cross-sectionally ranked daily returns.
+
+        if not code:
+            return Rfactor.apply(
+                lambda col: col.shift(1).corr(Rreturn[col.name], min_periods=10), axis=0
+            )
+
+        else:
+            return Rfactor[code].shift(1).corr(Rreturn[code], min_periods=10)
 
 
     def tvma(self, window=6, closed=None):
@@ -441,7 +514,7 @@ class Factor(Indicator):
         assert self.close is not None
         assert self.money is not None
 
-        valid_days = self.sign().rolling(window, closed=closed).sum()
+        valid_days = self.dummy.rolling(window, closed=closed).sum()
         return (self.close - self.close.shift(window)) * \
             self.money.rolling(window, closed=closed).sum() * \
             valid_days / self.close.shift(window)

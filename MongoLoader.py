@@ -131,6 +131,15 @@ class Mongo(object):
 
 
     @property
+    def dummy(self):
+        """
+        :return: Return -1.0 if today's yield < 0 otherwise 1.0
+        """
+
+        return 2 * ((self.rate >= 0) - 0.5)
+
+
+    @property
     def lograte(self) -> pd.DataFrame:
         if self.data["lograte"] is None:
             self.data["lograte"] = np.log(self.rate + 1)
@@ -427,7 +436,7 @@ class Mongo(object):
 
         self.data["mv"] = df
 
-        print("Stock total market capitalization loaded successfully.")
+        print("Daily market total capitalization loaded successfully.")
         return df
 
 
