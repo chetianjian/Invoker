@@ -7,11 +7,11 @@ class Indicator(Mongo):
         super().__init__()
 
         """
-        Noted that, some indicators may also be shown in class "Factor" (but in lowercases).
-        The main difference between them is that the lowcases stand for default parameter
-        settings and are expressed in python properties, while the uppercases would adopt
-        user-identified parameters and are expressed in python functions (e.g. window size;
-        whether to use vwap or close as daily prices; etc.).
+            Noted that, some indicators may also be shown in class "Factor" (but in lowercases).
+        The main difference between them is that the lowcases stand for default parameter settings 
+        and are expressed in python properties, while the uppercases would adopt user-identified 
+        parameters and are expressed in python functions (e.g. window size; whether to use vwap 
+        or close as daily prices; etc.).
         
         In fact, this class (Indicator) is the superclass of class Factor.
         """

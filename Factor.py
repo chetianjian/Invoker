@@ -39,8 +39,8 @@ class Factor(Indicator, Alpha101):
         :return: Factor values after neutralization.
         """
 
-        if towards == "market":
-            self.mv
+        pass
+
 
 
 
@@ -226,6 +226,22 @@ class Factor(Indicator, Alpha101):
         obv = self.obv
 
         return obv.rolling(window=window, closed=closed).mean()
+
+
+    @property
+    def rsi(self):
+        """
+        :return: RSI values when RSI length takes 6.
+        """
+
+        assert self.rate is not None
+
+        positive = self.rate[self.rate > 0]
+        negative = self.rate[self.rate < 0]
+        rs = positive.rolling(window=6, min_periods=1).sum() / \
+             np.absolute(negative.rolling(window=6, min_periods=1).sum())
+
+        return 100 - 100 / (1 + rs)
 
 
     @property
@@ -987,7 +1003,7 @@ class Factor(Indicator, Alpha101):
         """
         :param window: int, default = 20.
         :param closed: str in ["left", "right", "both", "neither"], default = "None".
-        :return: window-day's standard deviation of return.
+        :return: window-day's variances of returns.
         """
 
         assert self.rate is not None
@@ -1063,19 +1079,7 @@ class Factor(Indicator, Alpha101):
         return (1 - weight) * self.low.rolling(window, closed=closed).mean()
 
 
-    def rsi(self):
-        """
-        :return: RSI values when RSI length takes 6.
-        """
 
-        assert self.rate is not None
-
-        positive = self.rate[self.rate > 0]
-        negative = self.rate[self.rate < 0]
-        rs = positive.rolling(window=6, min_periods=1).sum() / \
-             np.absolute(negative.rolling(window=6, min_periods=1).sum())
-
-        return 100 - 100 / (1 + rs)
 
 
     def rsi_quick(self, window=25, closed=None):

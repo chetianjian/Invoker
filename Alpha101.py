@@ -3,6 +3,16 @@ from MongoLoader import Mongo
 
 
 class Alpha101(Mongo):
+    """
+    Notations (Ternary operator):
+    Ternary operator 'x ? y : z' means that:
+        If condition x is TRUE then y;
+        If condition x is FALSE then z
+
+    For enhanced usage, when x, y, z are all pd.DataFrames with identical shape, term 'x ? y : z' means:
+        Taking values of y where x is statisfied;
+        Taking Values of z where (NOT x) is statisfied
+    """
 
     def __init__(self):
         super().__init__()
@@ -15,11 +25,13 @@ class Alpha101(Mongo):
         :return: (rank(Ts_ArgMax(SignedPower(((returns<0)?stddev(returns,20):close),2.),5))-0.5)
         """
 
-        tmp1 = self.volume.diff(periods=1).rank(axis=1, pct=True)
-        tmp2 = ((self.close - self.open) / self.open).rank(axis=1, pct=True)
-        tmp3 = -tmp1.iloc[-6:, :].corrwith(tmp2.iloc[-6:, :]).dropna()
+        if self.alpha101["001"] is None:
+            tmp = self.close
+            tmp[self.rate < 0] = stddev(self.rate, 20)
 
-        return tmp3.dropna()
+            self.alpha101["001"] = ts_argmax(np.power(tmp, 2), 5).rank(pct=True) - 0.5
+
+        return self.alpha101["001"]
 
 
     @property
@@ -99,7 +111,14 @@ class Alpha101(Mongo):
         :return: ((adv20<volume)?((-1*ts_rank(abs(delta(close,7)),60))*sign(delta(close,7))):(-1*1))
         """
 
-        return None
+        if self.alpha101["007"] is None:
+            adv20 = self.volume.rolling(window=20).mean()
+            tmp = -1 * ts_rank(np.absolute(self.close.diff(7)), 60) * np.sign(self.close.diff(7))
+            tmp[adv20 >= self.volume] = -1
+
+            self.alpha101["007"] = tmp
+
+        return self.alpha101["007"]
 
 
     @property
@@ -116,8 +135,37 @@ class Alpha101(Mongo):
         return self.alpha101["008"]
 
 
+    @property
+    def alpha_009(self):
+        """
+        :return: ((0 < ts_min(delta(close, 1), 5)) ? delta(close, 1) : (
+                 (ts_max(delta(close, 1), 5) < 0) ? delta(close, 1) : (-1 * delta(close, 1))
+                 ))
+        """
+
+        if self.alpha101["009"] is None:
+            tmp = self.close.diff(1)
+            result = -tmp
+            cond1 = ts_min(tmp, 5) > 0
+            cond2 = ts_max(tmp, 5) < 0
+            result[cond1 | cond2] = tmp
+
+            self.alpha101["009"] = result
+
+        return self.alpha101["009"]
 
 
+    @property
+    def alpha_010(self):
+        """
+        :return: rank(((0 < ts_min(delta(close, 1), 4)) ? delta(close, 1) :
+                 ((ts_max(delta(close, 1), 4) < 0) ? delta(close, 1) : (-1 * delta(close, 1)))))
+        """
+
+        if self.alpha101["010"] is None:
+            pass
+
+        return None
 
 
     @property
