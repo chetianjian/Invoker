@@ -328,9 +328,25 @@ class Alpha101(Mongo):
         return self.alpha101["020"]
 
 
+    "__________________________________________________________"
+
+    def alpha_021(self):
+        """
+        :return: ((((sum(close, 8) / 8) + stddev(close, 8)) < (sum(close, 2) / 2)) ?
+        (-1 * 1) : (((sum(close, 2) / 2) < ((sum(close, 8) / 8) - stddev(close, 8))) ?
+        1 : (((1 < (volume / adv20)) || ((volume / adv20) == 1)) ? 1 : (-1 * 1))))
+        """
+
+        if self.alpha101["021"] is None:
+            adv20 = self.volume.rolling(20).mean()
+            tmp1 = self.close.rolling(8).sum() / 8
+            tmp2 = stddev(self.close, 8)
+            tmp3 = self.close.rolling(2).sum() / 2
 
 
+        return self.alpha101["021"]
 
+    "__________________________________________________________"
 
 
     @property

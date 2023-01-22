@@ -1,6 +1,7 @@
 from utils import *
 from Indicator import Indicator
 from Alpha101 import Alpha101
+from sklearn.linear_model import LinearRegression
 
 
 class Factor(Indicator, Alpha101):
@@ -18,7 +19,7 @@ class Factor(Indicator, Alpha101):
     #     return self.__init__(data)
 
 
-    def neutralize(self, factor: pd.DataFrame, towards="market") -> pd.DataFrame:
+    def neutralize(self, factor: pd.DataFrame, towards="mv") -> pd.DataFrame:
         """
         Introduction:
             Taking neutralization towards market values as an example, in this case,
@@ -39,16 +40,33 @@ class Factor(Indicator, Alpha101):
         :return: Factor values after neutralization.
         """
 
-        pass
+
+        def get_row_residuals(row: pd.Series, toward_df: pd.DataFrame) -> pd.Series:
+            toward_row = toward_df.loc[row.name]
+            indices = list(set(row.dropna().index) & set(toward_row.dropna().index))
+
+            if len(indices) == 0:
+                return pd.Series(data=np.nan, index=row.index)
+
+            fit = LinearRegression().fit(X=toward_row[indices].values.reshape(-1, 1),
+                                          y=row[indices])
+            return row - toward_row * fit.coef_ - fit.intercept_
 
 
+        if towards == "mv":
+            mv = self.mv[factor.columns]
 
+            try:
+                assert mv.shape == factor.shape
+            except:
+                msg = f"""
+                Inconsistent shapes of market value and factor dataframes. \n
+                Market value dataframe: {mv.shape} \n
+                Factor dataframe: {factor.shape}
+                """
+                raise AssertionError(msg)
 
-
-
-
-
-
+            return factor.apply(lambda row: get_row_residuals(row=row, toward_df=mv), axis=1)
 
 
     def IC(self, factor, cumulative=False):
