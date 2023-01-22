@@ -153,6 +153,17 @@ class Factor(Indicator, Alpha101):
             return Rfactor[code].shift(1).corr(Rreturn[code], min_periods=10)
 
 
+    def IR(self, icdf: pd.DataFrame, window: int):
+        """
+        Information Ratio: Representing factors' stability of producing rate of returns.
+        :param icdf: Target IC (Information Coefficient) dataframe.
+                     Can also be Rank IC dataframe.
+        :param window: int. Window size that used to do rolling operations.
+        :return: IR dataframe.
+        """
+        return icdf.rolling(window).mean() / icdf.rolling(window).std()
+
+
     def tvma(self, window=6, closed=None):
         """
         :param window: int, default = 6.

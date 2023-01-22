@@ -24,5 +24,3 @@ class Similarity(object):
         return np.dot(self.x, self.y) / \
             np.sqrt(np.nansum(np.power(self.x, 2))) / \
             np.sqrt(np.nansum(np.power(self.y, 2)))
-
-

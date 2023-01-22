@@ -750,8 +750,8 @@ class Alpha101(Mongo):
         """
 
         tmp1 = (self.close.shift(20) - self.close.shift(10)) / 10
-        tmp2 = (self.close.shift(10) - self.close) / 1010
-        print(tmp1, tmp2)
+        tmp2 = (self.close.shift(10) - self.close) / 10
+
         return None
 
 

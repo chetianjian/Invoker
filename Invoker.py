@@ -2,6 +2,11 @@ from typing import List
 
 from Factor import Factor
 from Strategy import Strategy
+from Density import Density
+from Copula import BivariateCopula
+from Similarity import Similarity
+from Metric import Metric
+from ShareHolderFetcher import ShareHolderFetcher
 from utils import *
 
 
@@ -10,6 +15,49 @@ class Invoker(Factor, Strategy):
     def __init__(self):
         # print("I am a beacon of knowledge blazing out across a black sea of ignorance.")
         super().__init__()
+
+
+    # ------------------------------------------------------------------------------------------
+
+
+    @property
+    def Density(self):
+        return Density()
+
+
+    @property
+    def BivariateCopula(self):
+        return BivariateCopula()
+
+
+    @staticmethod
+    def Similarity(x: np.array, y: np.array):
+        """
+        :param x: First vector.
+        :param y: Second vector.
+        """
+        return Similarity(x=x, y=y)
+
+
+    @staticmethod
+    def Metric(x: np.array, y: np.array):
+        """
+        :param x: First point.
+        :param y: Second point.
+        """
+        return Metric(x=x, y=y)
+
+
+    @staticmethod
+    def ShareHolderFetcher(start_date=None, end_date=None):
+        """
+        :param start_date: str. Format: 'YYYYMMDD'
+        :param end_date: str. Format: 'YYYYMMDD'
+        """
+        return ShareHolderFetcher(start_date=start_date, end_date=end_date)
+
+
+    # ------------------------------------------------------------------------------------------
 
 
     @classmethod

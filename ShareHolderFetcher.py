@@ -81,6 +81,11 @@ class ShareHolderFetcher(object):
         print("Retrying...")
 
 
+    @classmethod
+    def init_fetcher(cls):
+        pass
+
+
 
 if __name__ == "__main__":
     holder = ShareHolderFetcher()
