@@ -40,7 +40,6 @@ class ShareHolderFetcher(object):
         print(f"Initializing crawling progress: {self.count}/{self.total}")
 
 
-
     @func_set_timeout(70)
     def fetch_code(self, code: str):
         """
@@ -53,11 +52,7 @@ class ShareHolderFetcher(object):
             print(f"抓取数据超时，股票代码：{code}")
 
 
-
-
-
     def fetcher(self):
-
         for code in self.codes[self.count:]:
             if self.count % 10 == 0:
                 self.tmp.to_csv(self.root + "/shareholder.csv", encoding="utf_8_sig")
