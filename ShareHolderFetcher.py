@@ -82,7 +82,6 @@ class ShareHolderFetcher(object):
 
 
 
-
 if __name__ == "__main__":
     holder = ShareHolderFetcher()
     while holder.count != holder.total:
