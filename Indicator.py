@@ -90,12 +90,17 @@ class Indicator(Mongo):
 
         return self.indicator["RSJ"]
 
+
     @property
     def TR(self):
         """
         True Range = MAX(High, Prior Close) - MIN(LOW, Prior Close)
         :return: True Range
         """
+
+        assert self.close is not None
+        assert self.high is not None
+        assert self.low is not None
 
         prior = self.close.shift(1)
         return np.maximum(self.high, prior) - np.minimum(self.low, prior)
@@ -179,8 +184,5 @@ class Indicator(Mongo):
         avg28 = self.BP.rolling(28).sum() / self.TR.rolling(28).sum()
 
         return (4 * avg7 + 2 * avg14 + avg28) / 7
-
-
-
 
 
