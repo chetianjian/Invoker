@@ -23,6 +23,7 @@ def impluse(arr):
     def row_normalize(row):
         return row / np.nansum(row) if np.nansum(row) != 0 else row / np.nan
 
+
     bias = (close - close.shift(window)) / (100 * close.shift(window))
     return bias.apply(lambda row: row_normalize(row), axis=1)
 

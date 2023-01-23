@@ -230,6 +230,17 @@ class Factor(Indicator, Alpha101):
 
 
     @property
+    def tr(self):
+        """
+        True Range = MAX(High, Prior Close) - MIN(LOW, Prior Close)
+        :return: True Range
+        """
+
+        prior = self.close.shift(1)
+        return np.maximum(self.high, prior) - np.minimum(self.low, prior)
+
+
+    @property
     def atr(self):
         """
         :return: The Average True Range. Calculated by:
@@ -240,10 +251,10 @@ class Factor(Indicator, Alpha101):
         assert self.high is not None
         assert self.low is not None
 
-        price = self.close.shift(1)
+        prior = self.close.shift(1)
         TR = np.maximum(self.high - self.low,
-                        np.absolute(self.high - price),
-                        np.absolute(self.low - price))
+                        np.absolute(self.high - prior),
+                        np.absolute(self.low - prior))
 
         return TR.rolling(window=14, min_periods=1, closed="left").mean()
 

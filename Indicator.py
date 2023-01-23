@@ -17,7 +17,7 @@ class Indicator(Mongo):
         """
 
         self.available_indicator = [
-            "ADJ", "CCI", "RSI", "MACD", "OBV", "HT", "ROC",
+            "ADJ", "CCI", "RSI", "MACD", "OBV", "HT", "ROC", "TR", "ATR", "BP",
             "ULTSOC"
         ]
         self.indicator = dict.fromkeys(self.available_data)
@@ -90,6 +90,16 @@ class Indicator(Mongo):
 
         return self.indicator["RSJ"]
 
+    @property
+    def TR(self):
+        """
+        True Range = MAX(High, Prior Close) - MIN(LOW, Prior Close)
+        :return: True Range
+        """
+
+        prior = self.close.shift(1)
+        return np.maximum(self.high, prior) - np.minimum(self.low, prior)
+
 
     def ATR(self, window=14, closed="left"):
         """
@@ -105,10 +115,10 @@ class Indicator(Mongo):
             assert self.high is not None
             assert self.low is not None
 
-            price = self.close.shift(1)
+            prior = self.close.shift(1)
             TR = np.maximum(self.high - self.low,
-                            np.absolute(self.high - price),
-                            np.absolute(self.low - price))
+                            np.absolute(self.high - prior),
+                            np.absolute(self.low - prior))
 
             self.indicator["ATR"] = TR.rolling(window=window, min_period=1, closed=closed).mean()
 
@@ -143,6 +153,33 @@ class Indicator(Mongo):
         assert self.close is not None
 
         return 100 * self.close / self.close.shift(window) - 100
+
+
+    @property
+    def BP(self):
+        """
+        Buying Pressure = Close - MIN(Low, Prior Close)
+        :return: Buying Pressure
+        """
+        return self.close - np.minimum(self.low, self.close.shift(1))
+
+
+    @property
+    def ULTSOC(self):
+        """
+        Ultimate Oscillator
+        :return: (4 * AVG7 + 2 * AVG14 + 1 * AVG28) / 7
+                 AVGn = n-days rolling sum of BP / n-days rolling sum of TR
+                 BP: Buying Pressure
+                 TR: True Range
+        """
+
+        avg7 = self.BP.rolling(7).sum() / self.TR.rolling(7).sum()
+        avg14 = self.BP.rolling(14).sum() / self.TR.rolling(14).sum()
+        avg28 = self.BP.rolling(28).sum() / self.TR.rolling(28).sum()
+
+        return (4 * avg7 + 2 * avg14 + avg28) / 7
+
 
 
 
