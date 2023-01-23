@@ -25,8 +25,3 @@ class Density(object):
             np.sqrt((2 * np.pi) ** len(x) * np.linalg.det(sigma))
 
 
-
-
-
-
-

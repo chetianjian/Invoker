@@ -1,5 +1,5 @@
 from utils import *
-from MongoLoader import Mongo
+from Mongo import Mongo
 
 class Indicator(Mongo):
 
@@ -13,7 +13,7 @@ class Indicator(Mongo):
         parameters and are expressed in python functions (e.g. window size; whether to use vwap 
         or close as daily prices; etc.).
         
-        In fact, this class (Indicator) is the superclass of class Factor.
+            In fact, this class (Indicator) is the superclass of class Factor.
         """
 
         self.available_indicator = [

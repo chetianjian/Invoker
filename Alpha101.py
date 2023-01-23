@@ -1,5 +1,5 @@
 from utils import *
-from MongoLoader import Mongo
+from Mongo import Mongo
 
 
 class Alpha101(Mongo):

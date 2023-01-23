@@ -153,15 +153,42 @@ class Factor(Indicator, Alpha101):
             return Rfactor[code].shift(1).corr(Rreturn[code], min_periods=10)
 
 
-    def IR(self, icdf: pd.DataFrame, window: int):
+
+    def IR(self, factor: pd.DataFrame, window: int, rank_ic=False):
         """
         Information Ratio: Representing factors' stability of producing rate of returns.
-        :param icdf: Target IC (Information Coefficient) dataframe.
-                     Can also be Rank IC dataframe.
+        :param factor: Target factor dataframe.
         :param window: int. Window size that used to do rolling operations.
+        :param rank_ic: Bool, default to False, whether to use rank IC or not.
         :return: IR dataframe.
         """
-        return icdf.rolling(window).mean() / icdf.rolling(window).std()
+        if rank_ic:
+            ic = self.rank_IC(factor=factor)
+        else:
+            ic = self.IC(factor=factor)
+
+        return ic.rolling(window).mean() / ic.rolling(window).std()
+
+
+    def IC_corr(self, factor1: pd.DataFrame, factor2: pd.DataFrame) -> float:
+        """
+        :param factor1: pd.DataFrame. The first factor dataframe input.
+        :param factor2: pd.DataFrame. The second factor dataframe input.
+        :return: float. The correlation between the IC (information coefficients) of
+                 the two inputted factor dataframes.
+        """
+        return self.IC(factor1).corrwith(self.IC(factor2))[0]
+
+
+    def IR_corr(self, factor1: pd.DataFrame, factor2: pd.DataFrame, window: int) -> float:
+        """
+        :param factor1: pd.DataFrame. The first factor dataframe input.
+        :param factor2: pd.DataFrame. The second factor dataframe input.
+        :param window: int. Window size that used to do rolling operations.
+        :return: float. The correlation between the IR (information ratio) of
+                 the two inputted factor dataframes.
+        """
+        return self.IR(factor1, window).corrwith(self.IR(factor2, window))[0]
 
 
     def tvma(self, window=6, closed=None):

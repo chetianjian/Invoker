@@ -1,4 +1,4 @@
-from MongoLoader import Mongo
+from Mongo import Mongo
 import numpy as np
 
 
