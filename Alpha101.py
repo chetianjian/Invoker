@@ -944,6 +944,9 @@ class Alpha101(Mongo):
         return self.alpha101["065"]
 
 
+
+
+
     @property
     def alpha_068(self):
         """
@@ -1004,6 +1007,8 @@ class Alpha101(Mongo):
 
 
 
+
+
     @property
     def alpha_077(self):
         """
@@ -1019,9 +1024,6 @@ class Alpha101(Mongo):
             self.alpha101["077"] = np.minimum(tmp1, tmp2)
 
         return self.alpha101["077"]
-
-
-
 
 
     @property
@@ -1169,6 +1171,10 @@ class Alpha101(Mongo):
         return self.alpha101["088"]
 
 
+
+
+
+
     @property
     def alpha_092(self):
         """
@@ -1185,6 +1191,9 @@ class Alpha101(Mongo):
             self.alpha101["092"] = np.minimum(tmp2, tmp3)
 
         return self.alpha101["092"]
+
+
+
 
 
     @property

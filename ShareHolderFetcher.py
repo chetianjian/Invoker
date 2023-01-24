@@ -25,7 +25,6 @@ class ShareHolderFetcher(object):
         else:
             self.end = end_date
 
-
         self.engine = ts.pro_api()
         self.root = os.getcwd().replace("\\", "/")
         self.info = self.engine.query(

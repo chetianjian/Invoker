@@ -197,6 +197,12 @@ class Mongo(object):
         return self.data["namechange"]
 
 
+    @property
+    def broker_recommend(self):
+        return pd.Series(self.block2code("券商金股"),
+                         [self.code2name(_) for _ in self.block2code("券商金股")])
+
+
     # -------------------------------------------------------------------------------------------
     # Properties for quick calling of index daily data.
     # Format: initiate with "i" for representing they are index data.

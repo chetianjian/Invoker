@@ -179,10 +179,26 @@ class Indicator(Mongo):
                  TR: True Range
         """
 
+        assert self.close is not None
+        assert self.high is not None
+        assert self.low is not None
+
         avg7 = self.BP.rolling(7).sum() / self.TR.rolling(7).sum()
         avg14 = self.BP.rolling(14).sum() / self.TR.rolling(14).sum()
         avg28 = self.BP.rolling(28).sum() / self.TR.rolling(28).sum()
 
         return (4 * avg7 + 2 * avg14 + avg28) / 7
+
+
+    def MTM(self, window=6):
+        """
+        MTM: Long when WMTM crossing up through 0,
+             Short when WMTM crossing down through 0.
+        :param window: int, default to 6.
+        :return: Momemtum indicator.
+        """
+
+        WMTM = self.close - self.close.shift(window)
+        return WMTM
 
 

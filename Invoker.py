@@ -59,12 +59,6 @@ class Invoker(Factor, Strategy):
     # ------------------------------------------------------------------------------------------
 
 
-    @property
-    def broker_recommend(self):
-        return pd.Series(self.block2code("券商金股"),
-                         [self.code2name(_) for _ in self.block2code("券商金股")])
-
-
     def yield_candle(self, code_list, n=0):
         """
         Usage:

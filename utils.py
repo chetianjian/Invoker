@@ -4,6 +4,7 @@ import plotly
 import plotly.express as px
 import plotly.graph_objects as go
 from sklearn.linear_model import LinearRegression
+import matplotlib.colors as mcolors
 
 
 def stddev(df, window=1):
@@ -102,7 +103,8 @@ def corr(df1, df2, window) -> pd.DataFrame:
         """
         raise AssertionError(msg)
 
-    return df1.rolling(window=window).corr(df2).replace([np.inf, -np.inf], np.nan)
+    return df1.rolling(window=window).corr(df2, min_periods=0).replace(
+        [np.inf, -np.inf], np.nan)
 
 
 def covar(df1: pd.DataFrame, df2: pd.DataFrame, window) -> pd.DataFrame:
@@ -391,6 +393,7 @@ def draw_line(series, legend=None, jupyter=True, color="blue", description=None)
         series = series.iloc[:, 0]
 
     traces = []
+
     trace = plotly.graph_objs.Scattergl(
         name=legend,
         x=series.index,
@@ -410,17 +413,38 @@ def draw_line(series, legend=None, jupyter=True, color="blue", description=None)
         )
 
     fig = plotly.graph_objs.Figure(data=traces, layout=layout)
+
     if jupyter:
         plotly.offline.init_notebook_mode(connected=True)
+
     return plotly.offline.iplot(fig, filename="dataplot")
 
 
-def draw_lines(series_list, color_list, legend_list, jupyter=True, description=None):
-    assert len(series_list) == len(color_list) == len(legend_list)
+def draw_lines(series_list, legend_list, jupyter=True, description=None):
+    length = len(series_list)
+
+    assert length == len(legend_list)
+
+    high_contrast = ["black", "red", "blue", "green", "orange", "purple",
+                     "yellow", "brown", "pink", "olive", "cyan", "gray"]
+
+    if length <= 12:
+        color_list = high_contrast[: length]
+
+    elif length <= len(mcolors.CSS4_COLORS.keys()):
+        color_list = np.random.choice(list(mcolors.CSS4_COLORS.keys()), size=length)
+
+    else:
+        msg = f"""
+        Insufficient colors for assignment. Please reduce the number of series inputted.
+        Inputted number of series: {length}.
+        Maximum number of colors supported: {len(mcolors.CSS4_COLORS.keys())}.
+        """
+        raise AssertionError(msg)
 
     traces = []
 
-    for _ in range(len(series_list)):
+    for _ in range(length):
         if type(series_list[_]) == pd.DataFrame:
             series_list[_] = series_list[_].iloc[:, 0]
 
@@ -443,18 +467,36 @@ def draw_lines(series_list, color_list, legend_list, jupyter=True, description=N
         )
 
     fig = plotly.graph_objs.Figure(data=traces, layout=layout)
+
     if jupyter:
         plotly.offline.init_notebook_mode(connected=True)
+
     return plotly.offline.iplot(fig, filename="dataplot")
 
 
-def draw_df_lines(df: pd.DataFrame, color_list, jupyter=True, title=""):
-    assert df.shape[1] == len(color_list)
+def draw_df_lines(df: pd.DataFrame, jupyter=True, title=""):
+    length = df.shape[1]
+    high_contrast = ["black", "red", "blue", "green", "orange", "purple",
+                     "yellow", "brown", "pink", "olive", "cyan", "gray"]
+
+    if length <= 12:
+        color_list = high_contrast[: length]
+
+    elif length <= len(mcolors.CSS4_COLORS.keys()):
+        color_list = np.random.choice(list(mcolors.CSS4_COLORS.keys()), size=length)
+
+    else:
+        msg = f"""
+        Insufficient colors for assignment. Please reduce the number of series inputted.
+        Inputted number of series: {length}.
+        Maximum number of colors supported: {len(mcolors.CSS4_COLORS.keys())}.
+        """
+        raise AssertionError(msg)
 
     traces = []
 
     dfcol = df.columns
-    for _ in range(df.shape[1]):
+    for _ in range(length):
         trace = plotly.graph_objs.Scattergl(
             name=dfcol[_],
             x=df.index,
