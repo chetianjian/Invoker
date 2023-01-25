@@ -93,6 +93,3 @@ if __name__ == "__main__":
         del holder.tmp["Unnamed: 0"]
         holder.fetcher()
         assert holder.count == holder.total
-
-
-

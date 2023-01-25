@@ -4,6 +4,7 @@ import pandas as pd
 from datetime import datetime
 from typing import List
 
+
 class Mongo(object):
     def __init__(self):
         self.client = pymongo.MongoClient("mongodb://localhost:27017/")

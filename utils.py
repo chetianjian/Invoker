@@ -516,6 +516,61 @@ def draw_df_lines(df: pd.DataFrame, jupyter=True, title=""):
     return plotly.offline.iplot(fig, filename="dataplot")
 
 
+def draw_scatters(series_list, legend_list, jupyter=True, description=None):
+    length = len(series_list)
+
+    assert length == len(legend_list)
+
+    high_contrast = ["black", "red", "blue", "green", "orange", "purple",
+                     "yellow", "brown", "pink", "olive", "cyan", "gray"]
+
+    if length <= 12:
+        color_list = high_contrast[: length]
+
+    elif length <= len(mcolors.CSS4_COLORS.keys()):
+        color_list = np.random.choice(list(mcolors.CSS4_COLORS.keys()), size=length)
+
+    else:
+        msg = f"""
+        Insufficient colors for assignment. Please reduce the number of series inputted.
+        Inputted number of series: {length}.
+        Maximum number of colors supported: {len(mcolors.CSS4_COLORS.keys())}.
+        """
+        raise AssertionError(msg)
+
+    traces = []
+
+    for _ in range(length):
+        if type(series_list[_]) == pd.DataFrame:
+            series_list[_] = series_list[_].iloc[:, 0]
+
+        trace = plotly.graph_objs.Scattergl(
+            name=legend_list[_],
+            x=series_list[_].index,
+            y=series_list[_].values,
+            line=dict(color=color_list[_]),
+            mode="markers"
+        )
+
+        traces.append(trace)
+
+    if description:
+        layout = plotly.graph_objs.Layout(
+            title=description
+        )
+    else:
+        layout = plotly.graph_objs.Layout(
+            title="Plot series data of: " + series_list[0].name
+        )
+
+    fig = plotly.graph_objs.Figure(data=traces, layout=layout)
+
+    if jupyter:
+        plotly.offline.init_notebook_mode(connected=True)
+
+    return plotly.offline.iplot(fig, filename="dataplot")
+
+
 def draw_candle(df: pd.DataFrame, n=0):
     """
     :param df: pd.DataFrame which stores the required data.
