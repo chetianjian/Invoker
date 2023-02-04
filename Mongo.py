@@ -132,7 +132,7 @@ class Mongo(object):
 
 
     @property
-    def dummy(self):
+    def dummy(self) -> pd.DataFrame:
         """
         :return: Return -1.0 if today's yield < 0 otherwise 1.0
         """
@@ -768,6 +768,16 @@ class Mongo(object):
 
         result = pd.DataFrame(cls().db["stock_list"].find({"name": name}))
         return None if result.empty else result["code"][0]
+
+
+    @classmethod
+    def name2block(cls, name: str):
+        """
+        :param name: A single stock name.
+        :return: The corresponding block names which the inputted stock belongs to.
+        """
+
+        return cls().code2block(cls().name2code(name))
 
 
     @classmethod

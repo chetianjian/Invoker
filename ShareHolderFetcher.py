@@ -16,7 +16,7 @@ class ShareHolderFetcher(object):
 
         if start_date is None:
             self.start = "".join(str(pd.to_datetime(datetime.now()) -
-                                     pd.Timedelta(24, "m")).split(" ")[0].split("-"))
+                                     pd.Timedelta(48, "m")).split(" ")[0].split("-"))
         else:
             self.start = start_date
 

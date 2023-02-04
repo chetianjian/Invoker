@@ -159,13 +159,20 @@ class Alpha101(Mongo):
     def alpha_010(self):
         """
         :return: rank(((0 < ts_min(delta(close, 1), 4)) ? delta(close, 1) :
-                 ((ts_max(delta(close, 1), 4) < 0) ? delta(close, 1) : (-1 * delta(close, 1)))))
+                 ((ts_max(delta(close, 1), 4) < 0) ? delta(close, 1) :
+                 (-1 * delta(close, 1)))))
         """
 
         if self.alpha101["010"] is None:
-            pass
+            tmp1 = self.close.diff(1)
+            tmp2 = tmp1.copy()
+            tmp2[ts_max(tmp1, 4) >= 0] = -tmp2
+            tmp3 = tmp1.copy()
+            tmp3[(0 >= ts_min(tmp1, 4))] = tmp2
 
-        return None
+            self.alpha101["010"] = tmp3.rank(pct=True)
+
+        return self.alpha101["010"]
 
 
     @property
@@ -328,8 +335,7 @@ class Alpha101(Mongo):
         return self.alpha101["020"]
 
 
-    "__________________________________________________________"
-
+    @property
     def alpha_021(self):
         """
         :return: ((((sum(close, 8) / 8) + stddev(close, 8)) < (sum(close, 2) / 2)) ?
@@ -342,11 +348,17 @@ class Alpha101(Mongo):
             tmp1 = self.close.rolling(8).sum() / 8
             tmp2 = stddev(self.close, 8)
             tmp3 = self.close.rolling(2).sum() / 2
+            tmp4 = (tmp1 + tmp2 < tmp3)
+            tmp5 = (tmp3 < tmp2 - tmp1)
+            tmp6 = 2 * ((1 < (self.volume / adv20)) | ((self.volume / adv20) == 1.0)) - 1
+            tmp5[~tmp5] = tmp6
+            result = tmp4.copy()
+            result[tmp4] = -1
+            result[~tmp4] = tmp5
 
+            self.alpha101["021"] = result
 
         return self.alpha101["021"]
-
-    "__________________________________________________________"
 
 
     @property
@@ -364,9 +376,47 @@ class Alpha101(Mongo):
         return self.alpha101["022"]
 
 
+    @property
+    def alpha_023(self):
+        """
+        :return:  (((sum(high, 20) / 20) < high) ? (-1 * delta(high, 2)) : 0)
+        """
+
+        if self.alpha101["023"] is None:
+            tmp1 = (self.high.rolling(20).sum() / 20 < self.high)
+            tmp2 = -1 * self.high.diff(2)
+            result = tmp1.copy()
+            result[tmp1] = tmp2
+            result[~tmp1] = 0
+
+            self.alpha101["023"] = result
+
+        return self.alpha101["023"]
 
 
+    @property
+    def alpha_024(self):
+        """
+        :return: ((
+        ((delta((sum(close, 100) / 100), 100) / delay(close, 100)) < 0.05) ||
+                 ((delta((sum(close, 100) / 100), 100) / delay(close, 100)) == 0.05)) ?
+                 (-1 * (close - ts_min(close, 100))) : (-1 * delta(close, 3)))
 
+        """
+
+        if self.alpha101["024"] is None:
+            tmp1 = (self.close.rolling(100).sum() / 100).diff(100)
+            tmp2 = self.close.shift(100)
+            tmp3 = ((tmp1 / tmp2) < 0.05) | ((tmp1 / tmp2) == 0.05)
+            tmp4 = -1 * (self.close - ts_min(self.close, 100))
+            tmp5 = -1 * self.close.diff(3)
+            result = tmp3.copy()
+            result[tmp3] = tmp4
+            result[~tmp3] = tmp5
+
+            self.alpha101["024"] = result
+
+        return self.alpha101["024"]
 
 
     @property
@@ -400,9 +450,21 @@ class Alpha101(Mongo):
         return self.alpha101["026"]
 
 
+    @property
+    def alpha_027(self):
+        """
+        :return: ((0.5 < rank((sum(correlation(rank(volume), rank(vwap), 6), 2) / 2.0))) ?
+                 (-1 * 1) : 1)
+        """
 
+        if self.alpha101["027"] is None:
+            tmp1 = (0.5 >= (corr(self.volume.rank(pct=True),
+                                 self.vwap.rank(pct=True), 6).rolling(2).sum() / 2).rank(pct=True))
+            tmp1[~tmp1] = -1
 
+            self.alpha101["027"] = tmp1.astype(int)
 
+        return self.alpha101["027"]
 
 
     @property
@@ -481,7 +543,8 @@ class Alpha101(Mongo):
     @property
     def alpha_032(self):
         """
-        :return: (scale(((sum(close,7)/7)-close))+(20*scale(correlation(vwap,delay(close,5),230))))
+        :return: (scale(((sum(close, 7) / 7) - close)) +
+                 (20 * scale(correlation(vwap, delay(close, 5), 230))))
         """
 
         if self.alpha101["032"] is None:
@@ -694,15 +757,38 @@ class Alpha101(Mongo):
         if self.alpha101["045"] is None:
             tmp1 = self.close.shift(5).rolling(20).mean().rank(pct=True)
             tmp2 = corr(self.close, self.volume, 2)
-            tmp3 = corr(self.close.rolling(5).sum(), self.close.rolling(20).sum(), 2).rank(pct=True)
+            tmp3 = corr(self.close.rolling(5).sum(),
+                        self.close.rolling(20).sum(), 2).rank(pct=True)
 
             self.alpha101["045"] = -1 * tmp1 * tmp2 * tmp3
 
         return self.alpha101["045"]
 
 
+    @property
+    def alpha_046(self):
+        """
+        :return: ((0.25 < (
+        ((delay(close, 20) - delay(close, 10)) / 10) - ((delay(close, 10) - close) / 10)
+        )) ? (-1 * 1) :
+                 (((((delay(close, 20) - delay(close, 10)) / 10) -
+                 ((delay(close, 10) - close) / 10)) < 0) ? 1 :
+                 ((-1 * 1) * (close - delay(close, 1)))))
+        """
 
+        if self.alpha101["046"] is None:
+            tmp1 = (self.close.shift(20) + self.close - 2 * self.close.shift(10)) / 10
+            tmp2 = (0.25 < tmp1)
+            tmp3 = (tmp1 < 0)
+            tmp4 = self.close.shift(1) - self.close
+            tmp3[~tmp3] = tmp4
+            result = tmp2.copy()
+            result[tmp2] = -1
+            result[~tmp2] = tmp3
 
+            self.alpha101["046"] = result.astype(float)
+
+        return self.alpha101["046"]
 
 
     @property
@@ -730,6 +816,25 @@ class Alpha101(Mongo):
 
 
     @property
+    def alpha_049(self):
+        """
+        :return: (((((delay(close, 20) - delay(close, 10)) / 10) -
+                 ((delay(close, 10) - close) / 10)) < (-1 * 0.1)) ?
+                 1 : ((-1 * 1) * (close - delay(close, 1))))
+        """
+
+        if self.alpha101["049"] is None:
+            tmp1 = (((self.close.shift(20) + self.close -
+                      2 * self.close.shift(10)) / 10) < -0.1)
+            tmp2 = self.close.shift(1) - self.close
+            tmp1[~tmp1] = tmp2
+
+            self.alpha101["049"] = tmp1.astype(float)
+
+        return self.alpha101["049"]
+
+
+    @property
     def alpha_050(self):
         """
         :return: (-1 * ts_max(rank(correlation(rank(volume), rank(vwap), 5)), 5))
@@ -745,17 +850,20 @@ class Alpha101(Mongo):
     @property
     def alpha_051(self):
         """
-        :return: (((((delay(close, 20) - delay(close, 10)) / 10) - ((delay(close, 10) - close) / 10)) <
-        (-1 * 0.05)) ? 1 : ((-1 * 1) * (close - delay(close, 1))))
+        :return: (((((delay(close, 20) - delay(close, 10)) / 10) -
+                 ((delay(close, 10) - close) / 10)) < (-1 * 0.05))
+                 ? 1 : ((-1 * 1) * (close - delay(close, 1))))
         """
 
-        tmp1 = (self.close.shift(20) - self.close.shift(10)) / 10
-        tmp2 = (self.close.shift(10) - self.close) / 10
+        if self.alpha101["051"] is None:
+            tmp1 = ((self.close.shift(20) + self.close -
+                     2 * self.close.shift(10)) / 10 < -0.05)
+            tmp2 = self.close.shift(1) - self.close
+            tmp1[~tmp1] = tmp2
 
-        return None
+            self.alpha101["051"] = tmp1.astype(float)
 
-
-
+        return self.alpha101["051"]
 
 
     @property
@@ -809,10 +917,8 @@ class Alpha101(Mongo):
     @property
     def alpha_055(self):
         """
-        :return: (-1 * correlation(
-                       rank(((close - ts_min(low, 12)) / (ts_max(high, 12) - ts_min(low, 12)))),
-                       rank(volume),
-                       6))
+        :return: (-1 * correlation(rank(((close - ts_min(low, 12)) / (ts_max(high, 12) -
+                 ts_min(low, 12)))), rank(volume), 6))
         """
 
         if self.alpha101["055"] is None:
@@ -858,9 +964,23 @@ class Alpha101(Mongo):
 
 
 
+    @property
+    def alpha_060(self):
+        """
+        :return: (0 - (1 * ((2 * scale(rank((
+        (((close - low) - (high - close)) / (high - low)) * volume)))) -
+                 scale(rank(ts_argmax(close, 10)))
+                 )))
+        """
 
+        if self.alpha101["060"] is None:
+            tmp1 = scale(ts_argmax(self.close, 10).rank(pct=True))
+            tmp2 = 2 * scale(((2 * self.close - self.low - self.high) *
+                              self.volume / (self.high - self.low)).rank(pct=True))
 
+            self.alpha101["060"] = tmp1 - tmp2
 
+        return self.alpha101["060"]
 
 
     @property
@@ -942,6 +1062,27 @@ class Alpha101(Mongo):
             self.alpha101["065"] = -1 * (tmp2 < tmp3)
 
         return self.alpha101["065"]
+
+
+    @property
+    def alpha_066(self):
+        """
+        :return: ((rank(decay_linear(delta(vwap, 3.51013), 7.23052)) +
+                 Ts_Rank(decay_linear((
+                 (((low * 0.96633) + (low * (1 - 0.96633))) - vwap) /
+                 (open - ((high + low) / 2))),
+                 11.4157), 6.72611)) * -1)
+        """
+
+        if self.alpha101["066"] is None:
+            tmp1 = decay_linear(self.vwap.diff(4), 7).rank(pct=True)
+            tmp2 = (self.low - self.vwap) / (self.open - (self.high + self.low) / 2)
+            tmp2 = ts_rank(decay_linear(tmp2, 11), 7)
+
+            self.alpha101["066"] = -1 * (tmp1 + tmp2)
+
+        return self.alpha101["066"]
+
 
 
 

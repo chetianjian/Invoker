@@ -59,3 +59,8 @@ class ShareHolderRank(Mongo):
         result.to_csv(self.root + "/holder_cumsum.csv", encoding="utf_8_sig")
 
         return result
+
+
+if __name__ == "__main__":
+    shareHolderRank = ShareHolderRank()
+    shareHolderRank.ShareHolderCumSum()

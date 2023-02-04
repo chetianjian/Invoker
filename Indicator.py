@@ -169,7 +169,6 @@ class Indicator(Mongo):
         return self.close - np.minimum(self.low, self.close.shift(1))
 
 
-    @property
     def ULTSOC(self):
         """
         Ultimate Oscillator

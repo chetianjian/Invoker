@@ -103,7 +103,7 @@ def corr(df1, df2, window) -> pd.DataFrame:
         """
         raise AssertionError(msg)
 
-    return df1.rolling(window=window).corr(df2, min_periods=0).replace(
+    return df1.rolling(window=window).corr(df2, min_periods=1).replace(
         [np.inf, -np.inf], np.nan)
 
 
@@ -136,9 +136,6 @@ def scale(df, alpha=1):
     """
 
     return alpha / np.abs(df).sum() * df
-
-
-
 
 
 def seriesPosNegSumRatio(series):
@@ -518,7 +515,6 @@ def draw_df_lines(df: pd.DataFrame, jupyter=True, title=""):
 
 def draw_scatters(series_list, legend_list, jupyter=True, description=None):
     length = len(series_list)
-
     assert length == len(legend_list)
 
     high_contrast = ["black", "red", "blue", "green", "orange", "purple",
@@ -578,6 +574,7 @@ def draw_candle(df: pd.DataFrame, n=0):
               Draw the candle plot for the last-n-days.
     :return: None.
     """
+
     df = df.iloc[-n:, :]
     fig = go.Figure(data=[go.Candlestick(
         x=df.index,
