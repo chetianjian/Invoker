@@ -1106,9 +1106,66 @@ class Alpha101(Mongo):
         return self.alpha101["068"]
 
 
+    @property
+    def alpha_071(self):
+        """
+        :return: max(Ts_Rank(decay_linear(correlation(Ts_Rank(close, 3.43976),
+                 Ts_Rank(adv180, 12.0647), 18.0175), 4.20501), 15.6948),
+                 Ts_Rank(decay_linear((rank(((low + open) - (vwap + vwap)))^2), 16.4662),
+                 4.4388))
+        """
+
+        if self.alpha101["071"] is None:
+            adv180 = self.volume.rolling(window=180).mean()
+            tmp1 = ts_rank(decay_linear(corr(ts_rank(self.close, 3),
+                                             ts_rank(adv180, 12), 18), 4), 16)
+            tmp2 = ts_rank(decay_linear(np.power(self.low + self.open -
+                                                 2 * self.vwap, 2).rank(pct=True), 16), 4)
+
+            self.alpha101["071"] = np.maximum(tmp1, tmp2)
+
+        return self.alpha101["071"]
 
 
+    @property
+    def alpha_072(self):
+        """
+        :return: (rank(decay_linear(correlation(((high + low) / 2),
+                 adv40, 8.93345), 10.1519)) / rank(decay_linear(correlation(
+                 Ts_Rank(vwap, 3.72469), Ts_Rank(volume, 18.5188), 6.86671), 2.95011)))
+        """
 
+        if self.alpha101["072"] is None:
+            adv40 = self.volume.rolling(window=40).mean()
+            tmp1 = decay_linear(corr((self.high + self.low) / 2, adv40, 9), 10).rank(pct=True)
+            tmp2 = decay_linear(corr(ts_rank(self.vwap, 4),
+                                     ts_rank(self.volume, 19), 7), 3).rank(pct=True)
+
+            self.alpha101["072"] = (tmp1 / tmp2).replace([np.inf, -np.inf], np.nan)
+
+        return self.alpha101["072"]
+
+
+    @property
+    def alpha_073(self):
+        """
+        :return: (max(rank(decay_linear(delta(vwap, 4.72775), 2.91864)),
+                 Ts_Rank(decay_linear(((delta(((open * 0.147155) +
+                 (low * (1 - 0.147155))), 2.03608) / ((open * 0.147155) +
+                 (low * (1 - 0.147155)))) * -1), 3.33829), 16.7411)) * -1)
+
+        0.852845
+        """
+
+        if self.alpha101["073"] is None:
+            tmp1 = decay_linear(self.vwap.diff(5), 3).rank(pct=True)
+            tmp2 = 0.147155 * self.open + 0.852845 * self.low
+            tmp3 = -1 * ts_rank(decay_linear((-1 * tmp2.diff(2) / tmp2).replace(
+                [np.inf, -np.inf], np.nan), 3), 17)
+
+            self.alpha101["073"] = np.maximum(tmp1, tmp3)
+
+        return self.alpha101["073"]
 
 
     @property
