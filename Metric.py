@@ -2,12 +2,14 @@ import numpy as np
 
 class Metric(object):
 
-    def __init__(self, x: np.array, y: np.array):
+    def __init__(self, x=None, y=None):
         """
-        :param x: First point.
-        :param y: Second point.
+        :param x: np.array. First point.
+        :param y: np.array. Second point.
         """
-        assert len(x) == len(y)
+
+        if x is not None and y is not None:
+            assert len(x) == len(y)
         self.x = x
         self.y = y
         self.dimension = len(x)
@@ -46,6 +48,11 @@ class Metric(object):
         return 0
 
 
-
-
-
+    @staticmethod
+    def dotToPlane(point, plane):
+        """
+        Calculate the geometric distance from a point to a plane in the Euclidean space.
+        :param point: np.array.
+        :param plane:
+        :return:
+        """

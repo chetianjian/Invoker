@@ -16,7 +16,7 @@ def stddev(df, window=1):
              past-window-days for each line of the original input.
     """
 
-    return df.rolling(window).std()
+    return df.rolling(window, min_periods=2).std()
 
 
 def ts_rank(df, window=1):
@@ -103,7 +103,7 @@ def corr(df1, df2, window) -> pd.DataFrame:
         """
         raise AssertionError(msg)
 
-    return df1.rolling(window=window).corr(df2, min_periods=1).replace(
+    return df1.rolling(window=window, min_periods=2).corr(df2).replace(
         [np.inf, -np.inf], np.nan)
 
 
@@ -389,6 +389,9 @@ def draw_line(series, legend=None, jupyter=True, color="blue", description=None)
     if type(series) == pd.DataFrame:
         series = series.iloc[:, 0]
 
+    if legend is not None:
+        series.name = legend
+
     traces = []
 
     trace = plotly.graph_objs.Scattergl(
@@ -404,10 +407,12 @@ def draw_line(series, legend=None, jupyter=True, color="blue", description=None)
         layout = plotly.graph_objs.Layout(
             title=description
         )
-    else:
+    elif series.name is not None:
         layout = plotly.graph_objs.Layout(
             title="Plot series data of: " + series.name
         )
+    else:
+        raise TypeError("Please enter a legend name.")
 
     fig = plotly.graph_objs.Figure(data=traces, layout=layout)
 

@@ -54,7 +54,9 @@ class Factor(Indicator, Alpha101):
 
 
         if towards == "mv":
-            mv = self.mv[factor.columns]
+            columns = list(set(self.mv.columns) & set(factor.columns))
+            rows = list(set(self.mv.index) & set(factor.index))
+            mv, factor = self.mv.loc[rows, columns], factor.loc[rows, columns]
 
             try:
                 assert mv.shape == factor.shape
@@ -66,7 +68,7 @@ class Factor(Indicator, Alpha101):
                 """
                 raise AssertionError(msg)
 
-            return factor.apply(lambda row: get_row_residuals(row=row, toward_df=mv), axis=1)
+            return factor.apply(lambda row: get_row_residuals(row=row, toward_df=mv), axis=1).sort_index()
 
 
     def IC(self, factor, cumulative=False):
@@ -1203,5 +1205,4 @@ class Factor(Indicator, Alpha101):
         ExitShort = self.low.rolling(window=window, closed=closed).min() + atr
 
         return 1 * (self.close > ExitShort) - (self.close < ExitLong)
-
 

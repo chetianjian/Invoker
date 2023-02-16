@@ -352,11 +352,9 @@ class Alpha101(Mongo):
             tmp5 = (tmp3 < tmp2 - tmp1)
             tmp6 = 2 * ((1 < (self.volume / adv20)) | ((self.volume / adv20) == 1.0)) - 1
             tmp5[~tmp5] = tmp6
-            result = tmp4.copy()
-            result[tmp4] = -1
-            result[~tmp4] = tmp5
+            tmp5[tmp4] = -1
 
-            self.alpha101["021"] = result
+            self.alpha101["021"] = tmp5.astype(int)
 
         return self.alpha101["021"]
 
@@ -385,11 +383,9 @@ class Alpha101(Mongo):
         if self.alpha101["023"] is None:
             tmp1 = (self.high.rolling(20).sum() / 20 < self.high)
             tmp2 = -1 * self.high.diff(2)
-            result = tmp1.copy()
-            result[tmp1] = tmp2
-            result[~tmp1] = 0
+            tmp2[~tmp1] = 0
 
-            self.alpha101["023"] = result
+            self.alpha101["023"] = tmp2.astype(int)
 
         return self.alpha101["023"]
 
@@ -410,11 +406,9 @@ class Alpha101(Mongo):
             tmp3 = ((tmp1 / tmp2) < 0.05) | ((tmp1 / tmp2) == 0.05)
             tmp4 = -1 * (self.close - ts_min(self.close, 100))
             tmp5 = -1 * self.close.diff(3)
-            result = tmp3.copy()
-            result[tmp3] = tmp4
-            result[~tmp3] = tmp5
+            tmp5[tmp3] = tmp4
 
-            self.alpha101["024"] = result
+            self.alpha101["024"] = tmp5
 
         return self.alpha101["024"]
 
@@ -443,9 +437,8 @@ class Alpha101(Mongo):
         if self.alpha101["026"] is None:
             tmp1 = ts_rank(self.volume, 5)
             tmp2 = ts_rank(self.high, 5)
-            tmp = corr(tmp1, tmp2, 5)
 
-            self.alpha101["026"] = -1 * ts_max(tmp, 3)
+            self.alpha101["026"] = -1 * ts_max(corr(tmp1, tmp2, 5), 3)
 
         return self.alpha101["026"]
 
@@ -458,11 +451,11 @@ class Alpha101(Mongo):
         """
 
         if self.alpha101["027"] is None:
-            tmp1 = (0.5 >= (corr(self.volume.rank(pct=True),
+            tmp = (0.5 >= (corr(self.volume.rank(pct=True),
                                  self.vwap.rank(pct=True), 6).rolling(2).sum() / 2).rank(pct=True))
-            tmp1[~tmp1] = -1
+            tmp[~tmp] = -1
 
-            self.alpha101["027"] = tmp1.astype(int)
+            self.alpha101["027"] = tmp.astype(int)
 
         return self.alpha101["027"]
 
@@ -778,15 +771,11 @@ class Alpha101(Mongo):
 
         if self.alpha101["046"] is None:
             tmp1 = (self.close.shift(20) + self.close - 2 * self.close.shift(10)) / 10
-            tmp2 = (0.25 < tmp1)
-            tmp3 = (tmp1 < 0)
-            tmp4 = self.close.shift(1) - self.close
-            tmp3[~tmp3] = tmp4
-            result = tmp2.copy()
-            result[tmp2] = -1
-            result[~tmp2] = tmp3
+            tmp2 = (tmp1 < 0)
+            tmp2[~tmp2] = self.close.shift(1) - self.close
+            tmp2[0.25 < tmp1] = -1
 
-            self.alpha101["046"] = result.astype(float)
+            self.alpha101["046"] = tmp2.astype(float)
 
         return self.alpha101["046"]
 
@@ -811,7 +800,24 @@ class Alpha101(Mongo):
         return self.alpha101["047"]
 
 
+    @property
+    def alpha_048(self):
+        """
+        Notice that industrial neutralization is omitted here.
+        :return: (indneutralize(((correlation(delta(close, 1), delta(delay(close, 1), 1), 250) *
+                 delta(close, 1)) / close), IndClass.subindustry) / sum(((delta(close, 1) /
+                 delay(close, 1))^2), 250))
+        """
 
+        if self.alpha101["048"] is None:
+            tmp1 = (corr(self.close.diff(1), self.close.shift(1).diff(1), 250) *
+                    self.close.diff(1) / self.close).replace([-np.inf, np.inf], np.nan)
+            tmp2 = np.power((self.close.diff(1) / self.close.shift(1)).replace(
+                [-np.inf, np.inf], np.nan), 2).rolling(window=250).sum()
+
+            self.alpha101["048"] = tmp1.div(tmp2).replace([-np.inf, np.inf], np.nan)
+
+        return self.alpha101["048"]
 
 
 
@@ -876,12 +882,12 @@ class Alpha101(Mongo):
 
         if self.alpha101["052"] is None:
             tmp1 = ts_min(self.low, 5)
-            tmp2 = tmp1.shift(5)
-            tmp3 = self.rate.rolling(240).sum()
-            tmp4 = self.rate.rolling(20).sum()
-            tmp5 = ts_rank(self.volume, 5)
+            tmp2 = self.rate.rolling(240).sum()
+            tmp3 = self.rate.rolling(20).sum()
 
-            self.alpha101["052"] = (-1 * tmp1 + tmp2) * ((tmp3 - tmp4) / 220).rank(pct=True) * tmp5
+            self.alpha101["052"] = (-1 * tmp1 + tmp1.shift(5)) * \
+                                   ((tmp2 - tmp3) / 220).rank(pct=True) * \
+                                   ts_rank(self.volume, 5)
 
         return self.alpha101["052"]
 
@@ -963,6 +969,35 @@ class Alpha101(Mongo):
         return self.alpha101["057"]
 
 
+    @property
+    def alpha_058(self):
+        """
+        Notice that industrial neutralization is omitted here.
+        :return: (-1 * Ts_Rank(decay_linear(correlation(IndNeutralize(vwap, IndClass.sector), volume,
+                 3.92795), 7.89291), 5.50322))
+        """
+
+        if self.alpha101["058"] is None:
+
+            self.alpha101["058"] = -1 * ts_rank(decay_linear(corr(self.vwap, self.volume, 4), 8), 6)
+
+        return self.alpha101["058"]
+
+
+    @property
+    def alpha_059(self):
+        """
+        Notice that industrial neutralization is omitted here.
+        :return: (-1 * Ts_Rank(decay_linear(correlation(IndNeutralize(((vwap * 0.728317) +
+                 (vwap * (1 - 0.728317))), IndClass.industry), volume, 4.25197), 16.2289), 8.19648))
+        """
+
+        if self.alpha101["059"] is None:
+
+            self.alpha101["059"] = -1 * ts_rank(decay_linear(corr(self.vwap, self.volume, 4), 16), 8)
+
+        return self.alpha101["059"]
+
 
     @property
     def alpha_060(self):
@@ -1019,8 +1054,24 @@ class Alpha101(Mongo):
         return self.alpha101["062"]
 
 
+    @property
+    def alpha_063(self):
+        """
+        Notice that industrial neutralization is omitted here.
+        :return: ((rank(decay_linear(delta(IndNeutralize(close, IndClass.industry), 2.25164), 8.22237)) -
+                 rank(decay_linear(correlation(((vwap * 0.318108) + (open * (1 - 0.318108))), sum(adv180,
+                 37.2467), 13.557), 12.2883))) * -1)
+        """
 
+        if self.alpha101["063"] is None:
+            adv180 = self.volume.rolling(window=180).mean()
+            tmp1 = decay_linear(self.close.diff(2), 8).rank(pct=True)
+            tmp2 = decay_linear(corr((0.318108 * self.vwap + 0.681892 * self.open),
+                                     adv180.rolling(37).sum(), 14), 12).rank(pct=True)
 
+            self.alpha101["063"] = -1 * (tmp1 - tmp2)
+
+        return self.alpha101["063"]
 
 
     @property
@@ -1084,8 +1135,22 @@ class Alpha101(Mongo):
         return self.alpha101["066"]
 
 
+    @property
+    def alpha_067(self):
+        """
+        Notice that industrial neutralization is omitted here.
+        :return: ((rank((high - ts_min(high, 2.14593)))^rank(correlation(IndNeutralize(vwap,
+                 IndClass.sector), IndNeutralize(adv20, IndClass.subindustry), 6.02936))) * -1)
+        """
 
+        if self.alpha101["067"] is None:
+            adv20 = self.volume.rolling(window=20).mean()
+            tmp1 = (self.high - ts_min(self.high, 2)).rank(pct=True)
+            tmp2 = corr(self.vwap, adv20, 6).rank(pct=True)
 
+            self.alpha101["067"] = -1 * np.power(tmp1, tmp2)
+
+        return self.alpha101["067"]
 
 
     @property
@@ -1104,6 +1169,42 @@ class Alpha101(Mongo):
             self.alpha101["068"] = -1 * (tmp1 < tmp3)
 
         return self.alpha101["068"]
+
+
+    @property
+    def alpha_069(self):
+        """
+        Notice that industrial neutralization is omitted here.
+        :return: ((rank(ts_max(delta(IndNeutralize(vwap, IndClass.industry), 2.72412), 4.79344))^
+                 Ts_Rank(correlation(((close * 0.490655) + (vwap * (1 - 0.490655))), adv20, 4.92416),
+                 9.0615)) * -1)
+        """
+
+        if self.alpha101["069"] is None:
+            adv20 = self.volume.rolling(window=20).mean()
+            tmp1 = ts_max(self.vwap.diff(3), 5).rank(pct=True)
+            tmp2 = ts_rank(corr((0.490655 * self.close + 0.509345 * self.vwap), adv20, 5), 9)
+
+            self.alpha101["069"] = -1 * np.power(tmp1, tmp2)
+
+        return self.alpha101["069"]
+
+
+    @property
+    def alpha_070(self):
+        """
+        Notice that industrial neutralization is omitted here.
+        :return: ((rank(delta(vwap, 1.29456))^Ts_Rank(correlation(IndNeutralize(close,
+                 IndClass.industry), adv50, 17.8256), 17.9171)) * -1)
+        """
+
+        if self.alpha101["070"] is None:
+            adv50 = self.volume.rolling(window=50).mean()
+            tmp = ts_rank(corr(self.close, adv50, 18), 18)
+
+            self.alpha101["070"] = -1 * np.power(self.vwap.diff(1).rank(pct=True), tmp)
+
+        return self.alpha101["070"]
 
 
     @property
@@ -1204,7 +1305,23 @@ class Alpha101(Mongo):
         return self.alpha101["075"]
 
 
+    @property
+    def alpha_076(self):
+        """
+        Notice that industrial neutralization is omitted here.
+        :return: (max(rank(decay_linear(delta(vwap, 1.24383), 11.8259)), Ts_Rank(decay_linear(Ts_Rank(
+                 correlation(IndNeutralize(low, IndClass.sector), adv81, 8.14941), 19.569), 17.1543),
+                 19.383)) * -1)
+        """
 
+        if self.alpha101["076"] is None:
+            adv81 = self.volume.rolling(window=81).mean()
+            tmp1 = decay_linear(self.vwap.diff(1), 12).rank(pct=True)
+            tmp2 = ts_rank(decay_linear(ts_rank(corr(self.low, adv81, 8), 20), 17), 19)
+
+            self.alpha101["076"] = -1 * np.maximum(tmp1, tmp2)
+
+        return self.alpha101["076"]
 
 
     @property
@@ -1244,10 +1361,40 @@ class Alpha101(Mongo):
         return self.alpha101["078"]
 
 
+    @property
+    def alpha_079(self):
+        """
+        Notice that industrial neutralization is omitted here.
+        :return: (rank(delta(IndNeutralize(((close * 0.60733) + (open * (1 - 0.60733))), IndClass.sector),
+                 1.23438)) < rank(correlation(Ts_Rank(vwap, 3.60973), Ts_Rank(adv150, 9.18637), 14.6644)))
+        """
+
+        if self.alpha101["079"] is None:
+            adv150 = self.volume.rolling(window=150).mean()
+            tmp1 = (0.60733 * self.close + 0.39267 * self.open).diff(1).rank(pct=True)
+            tmp2 = corr(ts_rank(self.vwap, 4), ts_rank(adv150, 9), 15)
+
+            self.alpha101["079"] = (tmp1 < tmp2).astype(int)
+
+        return self.alpha101["079"]
 
 
+    @property
+    def alpha_080(self):
+        """
+        Notice that industrial neutralization is omitted here.
+        :return: ((rank(Sign(delta(IndNeutralize(((open * 0.868128) + (high * (1 - 0.868128))),
+                 IndClass.industry), 4.04545)))^Ts_Rank(correlation(high, adv10, 5.11456), 5.53756)) * -1)
+        """
 
+        if self.alpha101["080"] is None:
+            adv10 = self.volume.rolling(window=10).mean()
+            tmp1 = np.sign((0.868128 * self.open + 0.131872 * self.high).diff(4)).rank(pct=True)
+            tmp2 = ts_rank(corr(self.high, adv10, 5), 6)
 
+            self.alpha101["080"] = -1 * np.power(tmp1, tmp2)
+
+        return self.alpha101["080"]
 
 
     @property
@@ -1268,6 +1415,22 @@ class Alpha101(Mongo):
         return self.alpha101["081"]
 
 
+    @property
+    def alpha_082(self):
+        """
+        Notice that industrial neutralization is omitted here.
+        :return: (min(rank(decay_linear(delta(open, 1.46063), 14.8717)), Ts_Rank(decay_linear(correlation(
+                 IndNeutralize(volume, IndClass.sector), ((open * 0.634196) + (open * (1 - 0.634196))),
+                 17.4842), 6.92131), 13.4283)) * -1)
+        """
+
+        if self.alpha101["082"] is None:
+            tmp1 = decay_linear(self.open.diff(1), 15).rank(pct=True)
+            tmp2 = ts_rank(decay_linear(corr(self.volume, self.open, 17), 7), 13)
+
+            self.alpha101["082"] = -1 * np.minimum(tmp1, tmp2)
+
+        return self.alpha101["082"]
 
 
     @property
@@ -1344,7 +1507,23 @@ class Alpha101(Mongo):
         return self.alpha101["086"]
 
 
+    @property
+    def alpha_087(self):
+        """
+        Notice that industrial neutralization is omitted here.
+        :return: (max(rank(decay_linear(delta(((close * 0.369701) + (vwap * (1 - 0.369701))), 1.91233),
+                 2.65461)), Ts_Rank(decay_linear(abs(correlation(IndNeutralize(adv81, IndClass.industry),
+                 close, 13.4132)), 4.89768), 14.4535)) * -1)
+        """
 
+        if self.alpha101["087"] is None:
+            adv81 = self.volume.rolling(window=81).mean()
+            tmp1 = decay_linear((0.369701 * self.close - 0.630299 * self.vwap).diff(2), 3).rank(pct=True)
+            tmp2 = ts_rank(decay_linear(np.absolute(corr(adv81, self.close, 13)), 5), 14)
+
+            self.alpha101["087"] = -1 * np.maximum(tmp1, tmp2)
+
+        return self.alpha101["087"]
 
 
     @property
@@ -1362,15 +1541,66 @@ class Alpha101(Mongo):
             tmp2 = self.high.rank(pct=True) + self.close.rank(pct=True)
             tmp3 = decay_linear(tmp1 - tmp2, 8).rank(pct=True)
             tmp4 = corr(ts_rank(self.close, 8), ts_rank(adv60, 21), 8)
-            tmp5 = ts_rank(decay_linear(tmp4, 7), 3)
 
-            self.alpha101["088"] = np.minimum(tmp3, tmp5)
+            self.alpha101["088"] = np.minimum(tmp3, ts_rank(decay_linear(tmp4, 7), 3))
 
         return self.alpha101["088"]
 
 
+    @property
+    def alpha_089(self):
+        """
+        Notice that industrial neutralization is omitted here.
+        :return: (Ts_Rank(decay_linear(correlation(((low * 0.967285) + (low * (1 - 0.967285))),
+                 adv10, 6.94279), 5.51607), 3.79744) - Ts_Rank(decay_linear(delta(IndNeutralize(
+                 vwap, IndClass.industry), 3.48158), 10.1466), 15.3012))
+        """
+
+        if self.alpha101["089"] is None:
+            adv10 = self.volume.rolling(window=10).mean()
+            tmp1 = ts_rank(decay_linear(corr(self.low, adv10, 7), 6), 4)
+            tmp2 = ts_rank(decay_linear(self.vwap.diff(3), 10), 15)
+
+            self.alpha101["089"] = tmp1 - tmp2
+
+        return self.alpha101["089"]
 
 
+    @property
+    def alpha_090(self):
+        """
+        Notice that industrial neutralization is omitted here.
+        :return: ((rank((close - ts_max(close, 4.66719)))^Ts_Rank(correlation(IndNeutralize(
+                 adv40, IndClass.subindustry), low, 5.38375), 3.21856)) * -1)
+        """
+
+        if self.alpha101["090"] is None:
+            adv40 = self.volume.rolling(window=40).mean()
+            tmp1 = self.close - ts_max(self.close, 5).rank(pct=True)
+            tmp2 = ts_rank(corr(adv40, self.low, 5), 3)
+
+            self.alpha101["090"] = -1 * np.power(tmp1, tmp2).replace([-np.inf, np.inf], np.nan)
+
+        return self.alpha101["090"]
+
+
+    @property
+    def alpha_091(self):
+        """
+        Notice that industrial neutralization is omitted here.
+        :return: ((Ts_Rank(decay_linear(decay_linear(correlation(IndNeutralize(close, IndClass.industry),
+                 volume, 9.74928), 16.398), 3.83219), 4.8667) - rank(decay_linear(correlation(
+                 vwap, adv30, 4.01303), 2.6809))) * -1)
+        """
+
+        if self.alpha101["091"] is None:
+            adv30 = self.volume.rolling(window=30).mean()
+            tmp1 = ts_rank(decay_linear(decay_linear(corr(self.close, self.volume, 10), 16), 4), 5)
+            tmp2 = decay_linear(corr(self.vwap, adv30, 4), 3).rank(pct=True)
+
+            self.alpha101["091"] = -1 * (tmp1 - tmp2)
+
+        return self.alpha101["091"]
 
 
     @property
@@ -1391,7 +1621,23 @@ class Alpha101(Mongo):
         return self.alpha101["092"]
 
 
+    @property
+    def alpha_093(self):
+        """
+        Notice that industrial neutralization is omitted here.
+        :return: (Ts_Rank(decay_linear(correlation(IndNeutralize(vwap, IndClass.industry), adv81, 17.4193),
+                 19.848), 7.54455) / rank(decay_linear(delta(((close * 0.524434) + (vwap * (1 - 0.524434))),
+                 2.77377), 16.2664)))
+        """
 
+        if self.alpha101["093"] is None:
+            adv81 = self.volume.rolling(window=81).mean()
+            tmp1 = ts_rank(decay_linear(corr(self.vwap, adv81, 17), 20), 8)
+            tmp2 = decay_linear((0.524434 * self.close - 0.475566 * self.vwap).diff(3), 16).rank(pct=True)
+
+            self.alpha101["093"] = (tmp1 / tmp2).replace([-np.inf, np.inf], np.nan)
+
+        return self.alpha101["093"]
 
 
     @property
@@ -1424,7 +1670,8 @@ class Alpha101(Mongo):
             adv40 = self.volume.rolling(window=40).mean()
             tmp1 = (self.open - ts_min(self.open, 12)).rank(pct=True)
             tmp2 = ((self.high + self.low) / 2).rolling(window=19).sum()
-            tmp3 = ts_rank(np.power(corr(tmp2, adv40.rolling(window=19).sum(), 13).rank(pct=True), 5), 12)
+            tmp3 = ts_rank(np.power(corr(tmp2, adv40.rolling(window=19).sum(),
+                                         13).rank(pct=True), 5), 12)
 
             self.alpha101["095"] = (tmp1 < tmp3).astype(int)
 
@@ -1449,7 +1696,23 @@ class Alpha101(Mongo):
         return self.alpha101["096"]
 
 
+    @property
+    def alpha_097(self):
+        """
+        Notice that industrial neutralization is omitted here.
+        :return: ((rank(decay_linear(delta(IndNeutralize(((low * 0.721001) + (vwap * (1 - 0.721001))),
+        IndClass.industry), 3.3705), 20.4523)) - Ts_Rank(decay_linear(Ts_Rank(correlation(Ts_Rank(low,
+        7.87871), Ts_Rank(adv60, 17.255), 4.97547), 18.5925), 15.7152), 6.71659)) * -1)
+        """
 
+        if self.alpha101["097"] is None:
+            adv60 = self.volume.rolling(window=60).mean()
+            tmp1 = decay_linear((0.721001 * self.low + 0.278999 * self.vwap).diff(3), 20).rank(pct=True)
+            tmp2 = ts_rank(decay_linear(ts_rank(corr(ts_rank(self.low, 8),
+                                                     ts_rank(adv60, 17), 5), 19), 16), 7)
+            self.alpha101["097"] = -1 * (tmp1 - tmp2)
+
+        return self.alpha101["097"]
 
 
     @property
@@ -1492,8 +1755,25 @@ class Alpha101(Mongo):
         return self.alpha101["099"]
 
 
+    @property
+    def alpha_100(self):
+        """
+        Notice that industrial neutralization is omitted here.
+        :return: (0 - (1 * (((1.5 * scale(indneutralize(indneutralize(rank(((((close - low) -
+                 (high - close)) / (high - low)) * volume)), IndClass.subindustry),
+                 IndClass.subindustry))) - scale(indneutralize((correlation(close, rank(adv20), 5)
+                 - rank(ts_argmin(close, 30))), IndClass.subindustry))) * (volume / adv20))))
+        """
 
+        if self.alpha101["100"] is None:
+            adv20 = self.volume.rolling(window=20).mean()
+            tmp1 = scale(((2 * self.close - self.low - self.high).div(self.high - self.low).replace(
+                [-np.inf, np.inf], np.nan) * self.volume).rank(pct=True))
+            tmp2 = scale(corr(self.close, adv20.rank(pct=True), 5) - ts_argmin(self.close, 30).rank(pct=True))
 
+            self.alpha101["100"] = -1 * (1.5 * tmp1 - tmp2) * (self.volume / adv20)
+
+        return self.alpha101["100"]
 
 
     @property
